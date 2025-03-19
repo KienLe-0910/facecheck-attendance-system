@@ -1,0 +1,19 @@
+📂 face_attendance_system/
+│── 📂 data/                # Lưu dữ liệu khuôn mặt & danh sách sinh viên
+│   ├── face_encodings.pkl  # File lưu mã hóa khuôn mặt
+│   ├── student_data.csv    # Danh sách sinh viên (id, name, class)
+│
+│── 📂 models/              # Chứa mô hình AI (nếu cần cải thiện)
+│   ├── face_model.pkl
+│
+│── 📂 utils/               # Chứa các module hỗ trợ
+│   ├── face_utils.py       # Các hàm hỗ trợ xử lý ảnh & nhận diện
+│
+│── 📂 frontend/            # (Tùy chọn) Nếu làm giao diện web
+│   ├── app.py             # Flask/Streamlit để hiển thị giao diện
+│
+│── main.py                # Chương trình chính để chạy hệ thống
+│── register.py            # Quét mặt để đăng ký
+│── recognize.py           # Kiểm tra danh tính (điểm danh)
+│── requirements.txt       # Danh sách thư viện cần cài đặt
+│── README.md              # Hướng dẫn sử dụng dự án
