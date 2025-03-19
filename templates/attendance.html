@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Điểm Danh Sinh Viên</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        video {
+            border: 2px solid black;
+            width: 50%;
+            margin-top: 20px;
+        }
+        #status {
+            font-size: 18px;
+            margin-top: 20px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>📸 Điểm Danh Sinh Viên</h1>
+    
+    <div class="container">
+        <p>🔹 Nhấn vào nút dưới đây để bắt đầu quét khuôn mặt.</p>
+        <button onclick="startAttendance()">📸 Bắt đầu điểm danh</button>
+        <button onclick="window.location.href='/'">⬅ Về trang chủ</button>
+        
+        <br><br>
+        <video id="video" autoplay></video>
+        <p id="status"></p>
+    </div>
+
+    <script>
+        function startAttendance() {
+            document.getElementById("status").innerText = "Đang mở webcam...";
+            fetch("/start_attendance")
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("status").innerText = data.message;
+                })
+                .catch(error => {
+                    console.error("Lỗi:", error);
+                    document.getElementById("status").innerText = "❌ Lỗi khi điểm danh!";
+                });
+        }
+    </script>
+</body>
+</html>
