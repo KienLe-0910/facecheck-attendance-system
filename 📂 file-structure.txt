@@ -1,19 +1,30 @@
-📂 face_attendance_system/
-│── 📂 data/                # Lưu dữ liệu khuôn mặt & danh sách sinh viên
-│   ├── face_encodings.pkl  # File lưu mã hóa khuôn mặt
-│   ├── student_data.csv    # Danh sách sinh viên (id, name, class)
+📂 /face_attendance_system
+│── main.py               # Chạy ứng dụng chính
+│── requirements.txt       # Thư viện cần cài đặt
+│── file-structure.txt       # Thư viện cần cài đặt
 │
-│── 📂 models/              # Chứa mô hình AI (nếu cần cải thiện)
-│   ├── face_model.pkl
+├──📂 api                   # Chứa các API endpoints
+│   ├── __init__.py        # Để Python nhận diện đây là một package
+│   ├── register.py        # API đăng ký sinh viên
+│   ├── attendance.py      # API điểm danh
+│   ├── enrollment.py # API xem danh sách điểm danh
+│   ├── login.py
+│   ├── student.py
+│   ├── teacher.py
 │
-│── 📂 utils/               # Chứa các module hỗ trợ
-│   ├── face_utils.py       # Các hàm hỗ trợ xử lý ảnh & nhận diện
+├──📂 models                # Chứa các models và database
+│   ├── __init__.py        # Để Python nhận diện đây là một package
+│   ├── db.py        # Kết nối và tạo database
 │
-│── 📂 frontend/            # (Tùy chọn) Nếu làm giao diện web
-│   ├── app.py             # Flask/Streamlit để hiển thị giao diện
+├──📂 static                
+│   ├── script.js         
+│   ├── style.css         # CSS frontend
 │
-│── main.py                # Chương trình chính để chạy hệ thống
-│── register.py            # Quét mặt để đăng ký
-│── recognize.py           # Kiểm tra danh tính (điểm danh)
-│── requirements.txt       # Danh sách thư viện cần cài đặt
-│── README.md              # Hướng dẫn sử dụng dự án
+├──📂 templates             # Chứa giao diện HTML
+│   ├── index.html         # Trang chủ
+│   ├── register.html      # Trang đăng ký
+│   ├── attendance.html    # Trang điểm danh
+│   ├── enroll.html
+│   ├── login.html
+│   ├── student_dashboard.html
+│   ├── teacher_dashboard.html
