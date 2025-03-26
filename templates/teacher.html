@@ -31,6 +31,7 @@
 
     <h3>📚 Danh sách lớp học phần của bạn</h3>
     <div id="classList"></div>
+    <p id="actionMsg"></p>
   </div>
 
   <script>
@@ -99,7 +100,7 @@
       if (!confirm(`Bạn có chắc chắn muốn xoá lớp ${class_id}?`)) return;
       const res = await fetch(`/delete_class?class_id=${class_id}`, { method: "DELETE" });
       const result = await res.json();
-      alert(result.message);
+      showMessage("actionMsg", result.message || result.detail, result.success !== false);
       if (result.success) loadClasses();
     }
 
@@ -111,7 +112,7 @@
         fetch(`/update_class_name?class_id=${class_id}&class_name=${encodeURIComponent(newName)}`, { method: "PUT" })
           .then(res => res.json())
           .then(result => {
-            alert(result.message);
+            showMessage("actionMsg", result.message || result.detail, result.success !== false);
             if (result.success) loadClasses();
           });
       }
