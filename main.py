@@ -35,18 +35,18 @@ async def register_page(request: Request):
 async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
-@app.get("/student_dashboard.html", response_class=HTMLResponse)
+@app.get("/student.html", response_class=HTMLResponse)
 async def student_dashboard(request: Request):
-    return templates.TemplateResponse("student_dashboard.html", {"request": request})
+    return templates.TemplateResponse("student.html", {"request": request})
 
-@app.get("/teacher_dashboard.html", response_class=HTMLResponse)
+@app.get("/teacher.html", response_class=HTMLResponse)
 async def teacher_dashboard(request: Request):
-    return templates.TemplateResponse("teacher_dashboard.html", {"request": request})
+    return templates.TemplateResponse("teacher.html", {"request": request})
 
 @app.get("/attendance.html", response_class=HTMLResponse)
 async def attendance_page(request: Request):
     return templates.TemplateResponse("attendance.html", {"request": request})
 
-@app.get("/enroll.html", response_class=HTMLResponse)
+@app.get("/enrollment.html", response_class=HTMLResponse)
 async def enroll_page(request: Request):
-    return templates.TemplateResponse("enroll.html", {"request": request})
+    return templates.TemplateResponse("enrollment.html", {"request": request})
