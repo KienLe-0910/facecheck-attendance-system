@@ -9,11 +9,14 @@
 <body>
   <div class="container">
     <h2>🧩 Đăng ký lớp học phần</h2>
+    <p>Nhập mã lớp học phần bạn muốn đăng ký vào bên dưới:</p>
+
     <form id="enrollForm">
-      <input type="text" name="class_id" placeholder="Mã lớp học phần" required><br>
+      <input type="text" name="class_id" id="class_id" placeholder="Mã lớp học phần" autocomplete="off" required><br>
       <button type="submit">Đăng ký</button>
     </form>
     <p id="msg"></p>
+    <button onclick="window.location.href='/student_dashboard.html'">⬅️ Quay lại</button>
   </div>
 
   <script>
@@ -25,16 +28,25 @@
 
     document.getElementById("enrollForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const form = e.target;
-      const class_id = form.class_id.value;
+      const class_id = document.getElementById("class_id").value.trim();
+
+      if (!class_id) {
+        showMessage("msg", "⚠️ Vui lòng nhập mã lớp học phần!", false);
+        return;
+      }
 
       const res = await fetch("/enroll_class", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id, class_id })
       });
+
       const data = await res.json();
       showMessage("msg", data.message || data.detail, data.success !== false);
+
+      if (data.success) {
+        document.getElementById("enrollForm").reset();
+      }
     });
   </script>
 </body>
