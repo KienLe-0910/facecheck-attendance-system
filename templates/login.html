@@ -37,8 +37,8 @@
 
           // ✅ Chuyển hướng dashboard theo vai trò
           const dashboard = result.role === "teacher"
-            ? "/teacher_dashboard.html"
-            : "/student_dashboard.html";
+            ? "/teacher.html"
+            : "/student.html";
 
           showMessage("msg", result.message, true);
           setTimeout(() => {
