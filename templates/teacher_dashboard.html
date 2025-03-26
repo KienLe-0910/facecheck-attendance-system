@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Giảng viên - Bảng điều khiển</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/script.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <h2>👨‍🏫 Xin chào, <span id="teacherName">Giảng viên</span>!</h2>
+
+    <div class="menu">
+      <button onclick="loadClasses()">📋 Quản lý lớp học phần</button>
+      <button onclick="logout()">🚪 Đăng xuất</button>
+      <a href="/">⬅️ Quay lại trang chủ</a>
+    </div>
+
+    <hr>
+    <h3>➕ Tạo lớp học phần mới</h3>
+    <form id="createClassForm">
+      <input type="text" id="class_id" placeholder="Mã lớp học phần" required>
+      <input type="text" id="class_name" placeholder="Tên lớp học phần" required>
+      <button type="submit">Tạo lớp</button>
+    </form>
+    <p id="createMsg"></p>
+
+    <hr>
+    <h3>🔍 Tìm kiếm lớp học phần</h3>
+    <input type="text" id="searchBox" placeholder="Nhập mã hoặc tên lớp...">
+
+    <h3>📚 Danh sách lớp học phần của bạn</h3>
+    <div id="classList"></div>
+  </div>
+
+  <script>
+    const { user_id, user_name, role } = getCurrentUser();
+
+    if (!user_id || role !== "teacher") {
+      window.location.href = "/login.html";
+    }
+
+    if (user_name) {
+      document.getElementById("teacherName").textContent = user_name;
+    }
+
+    let allClasses = [];
+
+    document.getElementById("createClassForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const class_id = document.getElementById("class_id").value.trim();
+      const class_name = document.getElementById("class_name").value.trim();
+
+      const res = await fetch(`/create_class?class_id=${class_id}&class_name=${encodeURIComponent(class_name)}&teacher_id=${user_id}`, {
+        method: "POST"
+      });
+      const result = await res.json();
+      showMessage("createMsg", result.message || result.detail, result.success !== false);
+
+      if (result.success) {
+        document.getElementById("createClassForm").reset();
+        loadClasses();
+      }
+    };
+
+    async function loadClasses() {
+      const res = await fetch(`/get_classes_by_teacher?teacher_id=${user_id}`);
+      const result = await res.json();
+      const div = document.getElementById("classList");
+
+      if (result.success) {
+        allClasses = result.data;
+        renderClassList(allClasses);
+      } else {
+        div.innerHTML = `<p style="color:red;">${result.message}</p>`;
+      }
+    }
+
+    function renderClassList(classList) {
+      const div = document.getElementById("classList");
+      if (classList.length === 0) {
+        div.innerHTML = "<p>Không có lớp học phần nào.</p>";
+        return;
+      }
+
+      const html = classList.map(cls => `
+        <div class="class-item">
+          <strong>${cls.class_id}</strong> - <span id="name-${cls.class_id}">${cls.class_name}</span>
+          <button onclick="editClass('${cls.class_id}')">✏️ Sửa</button>
+          <button onclick="deleteClass('${cls.class_id}')">❌ Xoá</button>
+          <button onclick="exportAttendance('${cls.class_id}')">📄 Xuất điểm danh</button>
+        </div>
+      `).join("");
+
+      div.innerHTML = html;
+    }
+
+    async function deleteClass(class_id) {
+      if (!confirm(`Bạn có chắc chắn muốn xoá lớp ${class_id}?`)) return;
+      const res = await fetch(`/delete_class?class_id=${class_id}`, { method: "DELETE" });
+      const result = await res.json();
+      alert(result.message);
+      if (result.success) loadClasses();
+    }
+
+    function editClass(class_id) {
+      const nameSpan = document.getElementById(`name-${class_id}`);
+      const oldName = nameSpan.textContent;
+      const newName = prompt("Nhập tên lớp mới:", oldName);
+      if (newName && newName !== oldName) {
+        fetch(`/update_class_name?class_id=${class_id}&class_name=${encodeURIComponent(newName)}`, { method: "PUT" })
+          .then(res => res.json())
+          .then(result => {
+            alert(result.message);
+            if (result.success) loadClasses();
+          });
+      }
+    }
+
+    document.getElementById("searchBox").addEventListener("input", () => {
+      const keyword = document.getElementById("searchBox").value.toLowerCase();
+      const filtered = allClasses.filter(cls =>
+        cls.class_id.toLowerCase().includes(keyword) ||
+        cls.class_name.toLowerCase().includes(keyword)
+      );
+      renderClassList(filtered);
+    });
+
+    async function exportAttendance(class_id) {
+      const date = prompt("Nhập ngày điểm danh (YYYY-MM-DD):");
+      if (!date) return;
+
+      const res = await fetch(`/attendance_list?class_id=${class_id}&date=${date}`);
+      const result = await res.json();
+
+      if (!result.success || !result.data) {
+        alert(result.message || "Không có dữ liệu điểm danh.");
+        return;
+      }
+
+      const rows = ["Mã người dùng,Họ tên,Thời gian,Trạng thái"];
+      result.data.forEach(item => {
+        rows.push(`${item.user_id},${item.name},${item.timestamp},${item.status}`);
+      });
+
+      const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `diem_danh_${class_id}_${date}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    window.onload = loadClasses;
+  </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Điểm danh khuôn mặt</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/script.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <h2>📸 Điểm danh bằng khuôn mặt</h2>
+
+    <form id="attendanceForm">
+      <input type="text" name="class_id" placeholder="Mã lớp học phần" required>
+
+      <video id="video" autoplay></video>
+      <canvas id="canvas" style="display:none;"></canvas>
+
+      <button type="button" id="captureBtn">Chụp khuôn mặt</button>
+      <button type="submit">Xác nhận điểm danh</button>
+    </form>
+
+    <p id="msg"></p>
+  </div>
+
+  <script>
+    let imageData = "";
+
+    // Kiểm tra xem đã đăng nhập chưa
+    const student_id = localStorage.getItem("student_id");
+    if (!student_id) {
+      alert("Bạn chưa đăng nhập!");
+      window.location.href = "/login.html";
+    }
+
+    // Bắt đầu camera
+    startCamera();
+
+    // Chụp ảnh từ webcam
+    document.getElementById("captureBtn").onclick = () => {
+      imageData = captureImage();
+      showMessage("msg", "✅ Đã chụp ảnh khuôn mặt. Bấm 'Xác nhận điểm danh' để gửi.", true);
+    };
+
+    // Gửi ảnh và thông tin điểm danh
+    attendanceForm.onsubmit = async (e) => {
+      e.preventDefault();
+      if (!imageData) {
+        showMessage("msg", "⚠ Vui lòng chụp ảnh trước khi điểm danh!", false);
+        return;
+      }
+
+      const class_id = attendanceForm.class_id.value;
+
+      const result = await postJSON("/attendance", {
+        student_id,
+        class_id,
+        image_data: imageData
+      });
+
+      showMessage("msg", result.message || result.detail, result.success !== false);
+    };
+  </script>
+</body>
+</html>

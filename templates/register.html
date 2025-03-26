@@ -1,0 +1,68 @@
+<!-- register.html (2 bước: thông tin → xác thực ảnh) -->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Đăng ký tài khoản</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/script.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Đăng ký tài khoản sinh viên</h2>
+
+    <!-- Bước 1: Nhập thông tin -->
+    <form id="infoForm">
+      <input type="text" name="student_id" placeholder="Mã sinh viên" required>
+      <input type="text" name="name" placeholder="Họ tên" required>
+      <input type="password" name="password" placeholder="Mật khẩu" required>
+      <button type="submit">Lưu thông tin</button>
+    </form>
+    <p id="infoMsg"></p>
+
+    <!-- Bước 2: Quét khuôn mặt -->
+    <div id="faceSection" style="display:none;">
+      <h3>✅ Thông tin đã lưu, vui lòng quét khuôn mặt</h3>
+      <video id="video" autoplay></video>
+      <canvas id="canvas" style="display:none;"></canvas>
+      <button id="captureFace">Xác nhận khuôn mặt</button>
+      <p id="faceMsg"></p>
+    </div>
+  </div>
+
+  <script>
+    const infoForm = document.getElementById("infoForm");
+    const faceSection = document.getElementById("faceSection");
+    const captureFace = document.getElementById("captureFace");
+    let studentId = "";
+
+    infoForm.onsubmit = async (e) => {
+      e.preventDefault();
+      studentId = infoForm.student_id.value;
+
+      const result = await postJSON("/register_info", {
+        student_id: studentId,
+        name: infoForm.name.value,
+        password: infoForm.password.value,
+        role: "student"
+      });
+
+      showMessage("infoMsg", result.message || result.detail, result.success !== false);
+
+      if (result.success !== false) {
+        faceSection.style.display = "block";
+        startCamera();
+      }
+    };
+
+    captureFace.onclick = async () => {
+      const image = captureImage();
+      const result = await postJSON("/upload_face", {
+        student_id: studentId,
+        image_data: image
+      });
+      showMessage("faceMsg", result.message || result.detail, result.success !== false);
+    };
+  </script>
+</body>
+</html>

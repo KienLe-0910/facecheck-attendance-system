@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Đăng ký lớp học phần</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/script.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <h2>🧩 Đăng ký lớp học phần</h2>
+    <form id="enrollForm">
+      <input type="text" name="class_id" placeholder="Mã lớp học phần" required><br>
+      <button type="submit">Đăng ký</button>
+    </form>
+    <p id="msg"></p>
+  </div>
+
+  <script>
+    const { user_id, role } = getCurrentUser();
+    if (!user_id || role !== "student") {
+      alert("Bạn chưa đăng nhập với tư cách sinh viên!");
+      window.location.href = "/login.html";
+    }
+
+    document.getElementById("enrollForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const class_id = form.class_id.value;
+
+      const res = await fetch("/enroll_class", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id, class_id })
+      });
+      const data = await res.json();
+      showMessage("msg", data.message || data.detail, data.success !== false);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Sinh viên - Bảng điều khiển</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/script.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <h2>🎓 Xin chào, <span id="studentName">Sinh viên</span>!</h2>
+    <p>Chọn chức năng bên dưới:</p>
+
+    <div class="menu">
+      <a href="/attendance.html">📸 Điểm danh</a>
+      <a href="/enroll.html">🧩 Đăng ký lớp học phần</a>
+      <button onclick="viewRegisteredClasses()">📚 Lớp đã đăng ký</button>
+      <button onclick="viewAttendanceHistory()">🕒 Lịch sử điểm danh</button>
+      <button onclick="logout()">🚪 Đăng xuất</button>
+    </div>
+
+    <div id="infoArea" style="margin-top: 2rem;"></div>
+  </div>
+
+  <script>
+    const studentId = localStorage.getItem("student_id");
+    const name = localStorage.getItem("student_name");
+    const role = localStorage.getItem("role");
+
+    if (!studentId || role !== "student") {
+      window.location.href = "/login.html";
+    }
+
+    if (name) {
+      document.getElementById("studentName").textContent = name;
+    }
+
+    async function viewRegisteredClasses() {
+      const res = await fetch(`/get_student_classes?student_id=${studentId}`);
+      const result = await res.json();
+      const area = document.getElementById("infoArea");
+      if (result.success) {
+        if (result.data.length === 0) {
+          area.innerHTML = "<p>Bạn chưa đăng ký lớp học phần nào.</p>";
+        } else {
+          const html = result.data.map(cls => `
+            <div><strong>${cls.class_id}</strong> - ${cls.class_name} <button onclick=\"unenrollClass('${cls.class_id}')\">❌ Huỷ</button></div>
+          `).join("");
+          area.innerHTML = `<h3>📚 Lớp đã đăng ký:</h3>` + html;
+        }
+      } else {
+        area.innerHTML = `<p style='color:red;'>${result.message}</p>`;
+      }
+    }
+
+    async function viewAttendanceHistory() {
+      const classId = prompt("Nhập mã lớp học phần để xem lịch sử điểm danh:");
+      if (!classId) return;
+      const res = await fetch(`/student_attendance_history?student_id=${studentId}&class_id=${classId}`);
+      const result = await res.json();
+      const area = document.getElementById("infoArea");
+      if (result.success) {
+        if (result.data.length === 0) {
+          area.innerHTML = `<p>Chưa có lịch sử điểm danh trong lớp ${classId}.</p>`;
+        } else {
+          const html = result.data.map(r => `<li>${r.timestamp} - ${r.status}</li>`).join("");
+          area.innerHTML = `<h3>🕒 Lịch sử điểm danh lớp ${classId}:</h3><ul>${html}</ul>`;
+        }
+      } else {
+        area.innerHTML = `<p style='color:red;'>${result.message}</p>`;
+      }
+    }
+
+    async function unenrollClass(classId) {
+      if (!confirm(`Bạn có chắc chắn muốn huỷ đăng ký lớp ${classId}?`)) return;
+      const res = await fetch(`/unenroll_class?student_id=${studentId}&class_id=${classId}`, { method: "DELETE" });
+      const result = await res.json();
+      alert(result.message);
+      if (result.success) viewRegisteredClasses();
+    }
+  </script>
+</body>
+</html>
