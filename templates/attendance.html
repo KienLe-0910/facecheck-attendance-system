@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Điểm danh khuôn mặt</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/script.js" defer></script>
+  <script src="/static/script.js"></script>
 </head>
 <body>
   <div class="container">
@@ -16,49 +16,42 @@
       <video id="video" autoplay></video>
       <canvas id="canvas" style="display:none;"></canvas>
 
-      <button type="button" id="captureBtn">📷 Chụp khuôn mặt</button>
-      <button type="submit">✅ Xác nhận điểm danh</button>
+      <button type="button" id="captureBtn">Chụp khuôn mặt</button>
+      <button type="submit">Xác nhận điểm danh</button>
     </form>
 
     <p id="msg"></p>
-    <button onclick="window.location.href='/student.html'">⬅️ Quay lại</button>
   </div>
 
   <script>
-    const { user_id, role } = getCurrentUser();
+    window.onload = function () {
+      const { user_id, role } = getCurrentUser();
 
-    if (!user_id || role !== "student") {
-      alert("Bạn chưa đăng nhập với tư cách sinh viên!");
-      window.location.href = "/login.html";
-    }
-
-    let imageData = "";
-
-    startCamera();
-
-    // Nút chụp ảnh
-    document.getElementById("captureBtn").onclick = () => {
-      imageData = captureImage();
-      showMessage("msg", "✅ Đã chụp ảnh khuôn mặt. Bấm 'Xác nhận điểm danh' để gửi.", true);
-    };
-
-    // Gửi ảnh và thông tin điểm danh
-    document.getElementById("attendanceForm").onsubmit = async (e) => {
-      e.preventDefault();
-
-      const class_id = document.getElementById("class_id").value.trim();
-
-      if (!imageData) {
-        showMessage("msg", "⚠️ Vui lòng chụp ảnh trước khi điểm danh!", false);
+      if (!user_id || role !== "student") {
+        alert("Bạn chưa đăng nhập với tư cách sinh viên!");
+        window.location.href = "/login.html";
         return;
       }
 
-      if (!class_id) {
-        showMessage("msg", "⚠️ Vui lòng nhập mã lớp học phần!", false);
-        return;
-      }
+      // Mở camera
+      startCamera();
 
-      try {
+      let imageData = "";
+
+      document.getElementById("captureBtn").onclick = () => {
+        imageData = captureImage();
+        showMessage("msg", "✅ Đã chụp ảnh khuôn mặt. Bấm 'Xác nhận điểm danh' để gửi.", true);
+      };
+
+      document.getElementById("attendanceForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const class_id = document.getElementById("class_id").value.trim();
+
+        if (!imageData) {
+          showMessage("msg", "⚠ Vui lòng chụp ảnh trước khi điểm danh!", false);
+          return;
+        }
+
         const result = await postJSON("/attendance", {
           user_id,
           class_id,
@@ -66,10 +59,7 @@
         });
 
         showMessage("msg", result.message || result.detail, result.success !== false);
-      } catch (err) {
-        showMessage("msg", "❌ Lỗi khi gửi yêu cầu điểm danh!", false);
-        console.error(err);
-      }
+      });
     };
   </script>
 </body>
