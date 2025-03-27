@@ -11,7 +11,7 @@
     <h2>👨‍🏫 Xin chào, <span id="teacherName">Giảng viên</span>!</h2>
 
     <div class="menu">
-      <button id="loadBtn">📋 Quản lý lớp học phần</button>
+      <button onclick="loadClasses()">📋 Quản lý lớp học phần</button>
     </div>
 
     <hr>
@@ -47,8 +47,6 @@
     }
 
     let allClasses = [];
-
-    document.getElementById("loadBtn").onclick = loadClasses;
 
     document.getElementById("createClassForm").onsubmit = async (e) => {
       e.preventDefault();
