@@ -11,54 +11,65 @@
     <h2>📸 Điểm danh bằng khuôn mặt</h2>
 
     <form id="attendanceForm">
-      <input type="text" name="class_id" placeholder="Mã lớp học phần" required>
+      <input type="text" name="class_id" id="class_id" placeholder="Mã lớp học phần" required>
 
       <video id="video" autoplay></video>
       <canvas id="canvas" style="display:none;"></canvas>
 
-      <button type="button" id="captureBtn">Chụp khuôn mặt</button>
-      <button type="submit">Xác nhận điểm danh</button>
+      <button type="button" id="captureBtn">📷 Chụp khuôn mặt</button>
+      <button type="submit">✅ Xác nhận điểm danh</button>
     </form>
 
     <p id="msg"></p>
+    <button onclick="window.location.href='/student.html'">⬅️ Quay lại</button>
   </div>
 
   <script>
-    let imageData = "";
+    const { user_id, role } = getCurrentUser();
 
-    // Kiểm tra xem đã đăng nhập chưa
-    const student_id = localStorage.getItem("student_id");
-    if (!student_id) {
-      alert("Bạn chưa đăng nhập!");
+    if (!user_id || role !== "student") {
+      alert("Bạn chưa đăng nhập với tư cách sinh viên!");
       window.location.href = "/login.html";
     }
 
-    // Bắt đầu camera
+    let imageData = "";
+
     startCamera();
 
-    // Chụp ảnh từ webcam
+    // Nút chụp ảnh
     document.getElementById("captureBtn").onclick = () => {
       imageData = captureImage();
       showMessage("msg", "✅ Đã chụp ảnh khuôn mặt. Bấm 'Xác nhận điểm danh' để gửi.", true);
     };
 
     // Gửi ảnh và thông tin điểm danh
-    attendanceForm.onsubmit = async (e) => {
+    document.getElementById("attendanceForm").onsubmit = async (e) => {
       e.preventDefault();
+
+      const class_id = document.getElementById("class_id").value.trim();
+
       if (!imageData) {
-        showMessage("msg", "⚠ Vui lòng chụp ảnh trước khi điểm danh!", false);
+        showMessage("msg", "⚠️ Vui lòng chụp ảnh trước khi điểm danh!", false);
         return;
       }
 
-      const class_id = attendanceForm.class_id.value;
+      if (!class_id) {
+        showMessage("msg", "⚠️ Vui lòng nhập mã lớp học phần!", false);
+        return;
+      }
 
-      const result = await postJSON("/attendance", {
-        student_id,
-        class_id,
-        image_data: imageData
-      });
+      try {
+        const result = await postJSON("/attendance", {
+          user_id,
+          class_id,
+          image_data: imageData
+        });
 
-      showMessage("msg", result.message || result.detail, result.success !== false);
+        showMessage("msg", result.message || result.detail, result.success !== false);
+      } catch (err) {
+        showMessage("msg", "❌ Lỗi khi gửi yêu cầu điểm danh!", false);
+        console.error(err);
+      }
     };
   </script>
 </body>
