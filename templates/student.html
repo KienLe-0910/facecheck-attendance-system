@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Sinh viên - Bảng điều khiển</title>
   <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/script.js" defer></script>
 </head>
 <body>
   <div class="container">
@@ -22,26 +23,17 @@
     <div id="infoArea" style="margin-top: 2rem;"></div>
   </div>
 
-  <script src="/static/script.js"></script>
   <script>
-    let user_id, user_name, role;
+    const { user_id, user_name, role } = getCurrentUser();
 
-    window.onload = function () {
-      const currentUser = getCurrentUser();
-      user_id = currentUser.user_id;
-      user_name = currentUser.user_name;
-      role = currentUser.role;
+    if (!user_id || role !== "student") {
+      alert("Bạn chưa đăng nhập với tư cách sinh viên!");
+      window.location.href = "/login.html";
+    }
 
-      if (!user_id || role !== "student") {
-        alert("Bạn chưa đăng nhập với tư cách sinh viên!");
-        window.location.href = "/login.html";
-        return;
-      }
-
-      if (user_name) {
-        document.getElementById("studentName").textContent = user_name;
-      }
-    };
+    if (user_name) {
+      document.getElementById("studentName").textContent = user_name;
+    }
 
     async function viewRegisteredClasses() {
       const res = await fetch(`/get_student_classes?user_id=${user_id}`);
@@ -66,18 +58,19 @@
     }
 
     async function viewAttendanceHistory() {
-      const classId = prompt("Nhập mã lớp học phần để xem lịch sử điểm danh:");
-      if (!classId) return;
-      const res = await fetch(`/student_attendance_history?user_id=${user_id}&class_id=${classId}`);
+      const sessionId = prompt("Nhập ID phiên điểm danh để xem lịch sử:");
+      if (!sessionId) return;
+
+      const res = await fetch(`/student_attendance_history?user_id=${user_id}&session_id=${sessionId}`);
       const result = await res.json();
       const area = document.getElementById("infoArea");
 
       if (result.success) {
         if (result.data.length === 0) {
-          area.innerHTML = `<p>Chưa có lịch sử điểm danh trong lớp <strong>${classId}</strong>.</p>`;
+          area.innerHTML = `<p>Chưa có lịch sử điểm danh trong phiên <strong>${sessionId}</strong>.</p>`;
         } else {
           const html = result.data.map(r => `<li>${r.timestamp} - ${r.status}</li>`).join("");
-          area.innerHTML = `<h3>🕒 Lịch sử điểm danh lớp <strong>${classId}</strong>:</h3><ul>${html}</ul>`;
+          area.innerHTML = `<h3>🕒 Lịch sử điểm danh phiên <strong>${sessionId}</strong>:</h3><ul>${html}</ul>`;
         }
       } else {
         area.innerHTML = `<p style="color:red;">${result.message}</p>`;
