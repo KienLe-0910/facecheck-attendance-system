@@ -1,10 +1,17 @@
 from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
 from models.db import get_db_connection
 from datetime import datetime
 import pytz
 import sqlite3
 
 router = APIRouter()
+
+# 📌 Định nghĩa schema cho dữ liệu phiên điểm danh
+class SessionCreate(BaseModel):
+    class_id: str
+    start_time: str  # dạng 'YYYY-MM-DDTHH:MM'
+    end_time: str
 
 # 📌 API: Tạo lớp học phần mới
 @router.post("/create_class")
@@ -80,27 +87,26 @@ def update_class_name(class_id: str, class_name: str):
     finally:
         conn.close()
 
-# 📌 API: Tạo phiên điểm danh mới cho lớp học phần
+# 📌 API: Tạo phiên điểm danh mới cho lớp học phần (Dùng JSON body)
 @router.post("/create_session")
-def create_session(class_id: str, start_time: str, end_time: str):
+def create_session(data: SessionCreate):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        try:
-            start_dt = datetime.strptime(start_time, "%Y-%m-%dT%H:%M")
-            end_dt = datetime.strptime(end_time, "%Y-%m-%dT%H:%M")
-            vn_start = start_dt + pytz.timezone("Asia/Ho_Chi_Minh").utcoffset(start_dt)
-            vn_end = end_dt + pytz.timezone("Asia/Ho_Chi_Minh").utcoffset(end_dt)
-        except ValueError:
-            return {"success": False, "message": "⚠ Định dạng thời gian không hợp lệ!"}
-
-        created_at = datetime.now(pytz.timezone("Asia/Ho_Chi_Minh")).strftime("%Y-%m-%d %H:%M:%S")
+        vn_tz = pytz.timezone("Asia/Ho_Chi_Minh")
+        start_dt = vn_tz.localize(datetime.strptime(data.start_time, "%Y-%m-%dT%H:%M"))
+        end_dt = vn_tz.localize(datetime.strptime(data.end_time, "%Y-%m-%dT%H:%M"))
+        created_at = datetime.now(vn_tz).strftime("%Y-%m-%d %H:%M:%S")
 
         cursor.execute("""
             INSERT INTO sessions (class_id, start_time, end_time, created_at)
-            VALUES (?, ?, ?, ?)""",
-            (class_id, vn_start.strftime("%Y-%m-%d %H:%M:%S"), vn_end.strftime("%Y-%m-%d %H:%M:%S"), created_at)
-        )
+            VALUES (?, ?, ?, ?)
+        """, (
+            data.class_id,
+            start_dt.strftime("%Y-%m-%d %H:%M:%S"),
+            end_dt.strftime("%Y-%m-%d %H:%M:%S"),
+            created_at
+        ))
         conn.commit()
         return {"success": True, "message": "✅ Phiên điểm danh đã được tạo!"}
     except Exception as e:
