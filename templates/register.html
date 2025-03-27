@@ -2,75 +2,35 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Đăng ký tài khoản</title>
+  <title>Đăng ký người dùng</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/script.js" defer></script>
 </head>
 <body>
   <div class="container">
-    <h2>📋 Đăng ký tài khoản sinh viên</h2>
+    <h2>📝 Đăng ký tài khoản</h2>
 
-    <!-- Bước 1: Nhập thông tin -->
     <form id="infoForm">
-      <input type="text" name="user_id" placeholder="Mã người dùng" required>
-      <input type="text" name="name" placeholder="Họ tên" required>
-      <input type="password" name="password" placeholder="Mật khẩu" required>
+      <input type="text" id="student_id" placeholder="Mã người dùng" required><br>
+      <input type="text" id="name" placeholder="Họ và tên" required><br>
+      <input type="password" id="password" placeholder="Mật khẩu" required><br>
+      <select id="role">
+        <option value="student">Sinh viên</option>
+        <option value="teacher">Giảng viên</option>
+      </select><br><br>
       <button type="submit">Lưu thông tin</button>
     </form>
     <p id="infoMsg"></p>
 
-    <!-- Bước 2: Quét khuôn mặt -->
-    <div id="faceSection" style="display:none;">
-      <h3>✅ Thông tin đã lưu, vui lòng quét khuôn mặt</h3>
-      <video id="video" autoplay></video>
-      <canvas id="canvas" style="display:none;"></canvas>
-      <button id="captureFace">Xác nhận khuôn mặt</button>
-      <p id="faceMsg"></p>
-      <div id="nextStep" style="display:none; margin-top: 1rem;">
-        <button onclick="window.location.href='/login.html'">🔑 Đăng nhập ngay</button>
-      </div>
-    </div>
+    <hr>
+
+    <h3>📸 Chụp và lưu khuôn mặt</h3>
+    <video id="camera" autoplay width="300" height="225"></video><br>
+    <button id="captureFace">Chụp và lưu khuôn mặt</button>
+    <p id="faceMsg"></p>
+
+    <br><a href="/login.html">← Quay lại trang đăng nhập</a>
   </div>
 
-  <script>
-    const infoForm = document.getElementById("infoForm");
-    const faceSection = document.getElementById("faceSection");
-    const captureFace = document.getElementById("captureFace");
-    const nextStep = document.getElementById("nextStep");
-
-    let userId = "";
-
-    infoForm.onsubmit = async (e) => {
-      e.preventDefault();
-      userId = infoForm.user_id.value.trim();
-
-      const result = await postJSON("/register_info", {
-        user_id: userId,
-        name: infoForm.name.value,
-        password: infoForm.password.value,
-        role: "student"
-      });
-
-      showMessage("infoMsg", result.message || result.detail, result.success !== false);
-
-      if (result.success !== false) {
-        faceSection.style.display = "block";
-        startCamera();
-      }
-    };
-
-    captureFace.onclick = async () => {
-      const image = captureImage();
-      const result = await postJSON("/upload_face", {
-        user_id: userId,
-        image_data: image
-      });
-      showMessage("faceMsg", result.message || result.detail, result.success !== false);
-
-      if (result.success) {
-        nextStep.style.display = "block";
-      }
-    };
-  </script>
+  <script src="/static/script.js"></script>
 </body>
 </html>
