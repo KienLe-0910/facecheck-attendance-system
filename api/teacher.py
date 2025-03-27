@@ -1,17 +1,10 @@
 from fastapi import APIRouter, Query, HTTPException
 from models.db import get_db_connection
 from datetime import datetime
-import pytz
 import sqlite3
+import pytz
 
 router = APIRouter()
-
-# Hàm lấy giờ Việt Nam hiện tại dưới dạng chuỗi
-def get_vietnam_time_str():
-    vn_tz = pytz.timezone("Asia/Ho_Chi_Minh")
-    vn_now = datetime.now(vn_tz)
-    return vn_now.strftime("%Y-%m-%d %H:%M:%S")
-
 
 # 📌 API: Lấy danh sách điểm danh theo lớp học phần và ngày
 @router.get("/attendance_list")
@@ -68,10 +61,11 @@ def create_class(class_id: str, class_name: str, teacher_id: str):
     cursor = conn.cursor()
 
     try:
-        created_at = get_vietnam_time_str()
+        # Ghi thời gian tạo theo giờ VN
+        vn_time = datetime.now(pytz.timezone("Asia/Ho_Chi_Minh")).strftime("%Y-%m-%d %H:%M:%S")
         cursor.execute(
             "INSERT INTO classes (class_id, class_name, teacher_id, created_at) VALUES (?, ?, ?, ?)",
-            (class_id, class_name, teacher_id, created_at)
+            (class_id, class_name, teacher_id, vn_time)
         )
         conn.commit()
         return {"success": True, "message": "✅ Lớp học phần được tạo thành công!"}
@@ -163,12 +157,15 @@ def set_class_time(class_id: str, start_time: str):
     cursor = conn.cursor()
     try:
         try:
-            vn_tz = pytz.timezone("Asia/Ho_Chi_Minh")
-            dt = datetime.strptime(start_time, "%Y-%m-%dT%H:%M").astimezone(vn_tz)
+            dt = datetime.strptime(start_time, "%Y-%m-%dT%H:%M")
+            vn_dt = dt + pytz.timezone("Asia/Ho_Chi_Minh").utcoffset(dt)
         except ValueError:
             return {"success": False, "message": "⚠ Định dạng thời gian không hợp lệ!"}
 
-        cursor.execute("UPDATE classes SET start_time = ? WHERE class_id = ?", (dt.strftime("%Y-%m-%d %H:%M:%S"), class_id))
+        cursor.execute(
+            "UPDATE classes SET start_time = ? WHERE class_id = ?",
+            (vn_dt.strftime("%Y-%m-%d %H:%M:%S"), class_id)
+        )
         conn.commit()
         if cursor.rowcount == 0:
             return {"success": False, "message": "⚠ Không tìm thấy lớp học phần."}
@@ -176,5 +173,6 @@ def set_class_time(class_id: str, start_time: str):
 
     except Exception as e:
         return {"success": False, "message": f"Lỗi hệ thống: {str(e)}"}
+
     finally:
         conn.close()
