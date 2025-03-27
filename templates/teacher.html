@@ -31,13 +31,28 @@
     <p id="actionMsg"></p>
 
     <hr>
+    <h3>🕒 Tạo phiên điểm danh cho lớp</h3>
+    <form id="createSessionForm">
+      <select id="session_class_id" required>
+        <option value="">-- Chọn lớp học phần --</option>
+      </select><br><br>
+
+      <label for="start_time">Bắt đầu:</label>
+      <input type="datetime-local" id="start_time" required><br><br>
+
+      <label for="end_time">Kết thúc:</label>
+      <input type="datetime-local" id="end_time" required><br><br>
+
+      <button type="submit">Tạo phiên điểm danh</button>
+    </form>
+    <p id="sessionMsg"></p>
+
+    <hr>
     <button onclick="logout()">🚪 Đăng xuất</button>
   </div>
 
-  <!-- 💡 Load script.js trước -->
   <script src="/static/script.js"></script>
 
-  <!-- 💡 Code JS xử lý chính -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const { user_id, user_name, role } = getCurrentUser();
@@ -70,6 +85,27 @@
         }
       };
 
+      document.getElementById("createSessionForm").onsubmit = async (e) => {
+        e.preventDefault();
+        const class_id = document.getElementById("session_class_id").value;
+        const start_time = document.getElementById("start_time").value;
+        const end_time = document.getElementById("end_time").value;
+
+        const res = await fetch("/create_session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            class_id,
+            start_time,
+            end_time
+          })
+        });
+
+        const result = await res.json();
+        showMessage("sessionMsg", result.message || result.detail, result.success !== false);
+        if (result.success) document.getElementById("createSessionForm").reset();
+      };
+
       async function loadClasses() {
         const res = await fetch(`/get_classes_by_teacher?teacher_id=${user_id}`);
         const result = await res.json();
@@ -78,6 +114,11 @@
         if (result.success) {
           allClasses = result.data;
           renderClassList(allClasses);
+
+          // Đổ dropdown chọn lớp cho phiên điểm danh
+          const select = document.getElementById("session_class_id");
+          select.innerHTML = `<option value="">-- Chọn lớp học phần --</option>` +
+            result.data.map(cls => `<option value="${cls.class_id}">${cls.class_id} - ${cls.class_name}</option>`).join("");
         } else {
           div.innerHTML = `<p style="color:red;">${result.message}</p>`;
         }
@@ -152,10 +193,8 @@
         document.body.removeChild(link);
       };
 
-      // Bắt đầu tải danh sách
       loadClasses();
 
-      // Lọc tìm kiếm
       document.getElementById("searchBox").addEventListener("input", () => {
         const keyword = document.getElementById("searchBox").value.toLowerCase();
         const filtered = allClasses.filter(cls =>
