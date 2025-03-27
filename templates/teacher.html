@@ -53,6 +53,11 @@
       const class_id = document.getElementById("class_id").value.trim();
       const class_name = document.getElementById("class_name").value.trim();
 
+      if (!class_id || !class_name) {
+        showMessage("createMsg", "⚠️ Vui lòng nhập đầy đủ mã và tên lớp!", false);
+        return;
+      }
+
       const res = await fetch(`/create_class?class_id=${class_id}&class_name=${encodeURIComponent(class_name)}&teacher_id=${user_id}`, {
         method: "POST"
       });
@@ -87,7 +92,10 @@
 
       const html = classList.map(cls => `
         <div class="class-item">
-          <strong>${cls.class_id}</strong> - <span id="name-${cls.class_id}">${cls.class_name}</span>
+          <strong>${cls.class_id}</strong> - 
+          <span id="name-${cls.class_id}">${cls.class_name}</span>
+          ${cls.created_at ? `<br><small>🕒 Tạo lúc: ${cls.created_at}</small>` : ""}
+          <br>
           <button onclick="editClass('${cls.class_id}')">✏️ Sửa</button>
           <button onclick="deleteClass('${cls.class_id}')">❌ Xoá</button>
           <button onclick="exportAttendance('${cls.class_id}')">📄 Xuất điểm danh</button>
@@ -142,7 +150,7 @@
 
       const rows = ["Mã người dùng,Họ tên,Thời gian,Trạng thái"];
       result.data.forEach(item => {
-        rows.push(`${item.user_id},${item.name},${item.timestamp},${item.status}`);
+        rows.push(`"${item.user_id}","${item.name}","${item.timestamp}","${item.status}"`);
       });
 
       const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
