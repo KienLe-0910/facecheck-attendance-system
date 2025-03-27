@@ -8,11 +8,11 @@
 </head>
 <body>
   <div class="container">
-    <h2>Đăng ký tài khoản sinh viên</h2>
+    <h2>📋 Đăng ký tài khoản sinh viên</h2>
 
     <!-- Bước 1: Nhập thông tin -->
     <form id="infoForm">
-      <input type="text" name="student_id" placeholder="Mã sinh viên" required>
+      <input type="text" name="user_id" placeholder="Mã người dùng" required>
       <input type="text" name="name" placeholder="Họ tên" required>
       <input type="password" name="password" placeholder="Mật khẩu" required>
       <button type="submit">Lưu thông tin</button>
@@ -26,11 +26,9 @@
       <canvas id="canvas" style="display:none;"></canvas>
       <button id="captureFace">Xác nhận khuôn mặt</button>
       <p id="faceMsg"></p>
-
-      <!-- Nút đăng nhập sau khi xác thực thành công -->
-      <button id="goToLogin" style="display:none; margin-top: 1rem;" onclick="window.location.href='/login.html'">
-        🔐 Đăng nhập ngay
-      </button>
+      <div id="nextStep" style="display:none; margin-top: 1rem;">
+        <button onclick="window.location.href='/login.html'">🔑 Đăng nhập ngay</button>
+      </div>
     </div>
   </div>
 
@@ -38,15 +36,16 @@
     const infoForm = document.getElementById("infoForm");
     const faceSection = document.getElementById("faceSection");
     const captureFace = document.getElementById("captureFace");
-    const goToLogin = document.getElementById("goToLogin");
-    let studentId = "";
+    const nextStep = document.getElementById("nextStep");
+
+    let userId = "";
 
     infoForm.onsubmit = async (e) => {
       e.preventDefault();
-      studentId = infoForm.student_id.value;
+      userId = infoForm.user_id.value.trim();
 
       const result = await postJSON("/register_info", {
-        student_id: studentId,
+        user_id: userId,
         name: infoForm.name.value,
         password: infoForm.password.value,
         role: "student"
@@ -63,15 +62,13 @@
     captureFace.onclick = async () => {
       const image = captureImage();
       const result = await postJSON("/upload_face", {
-        student_id: studentId,
+        user_id: userId,
         image_data: image
       });
-
       showMessage("faceMsg", result.message || result.detail, result.success !== false);
 
-      // ✅ Hiện nút đăng nhập nếu thành công
-      if (result.success !== false) {
-        goToLogin.style.display = "inline-block";
+      if (result.success) {
+        nextStep.style.display = "block";
       }
     };
   </script>
