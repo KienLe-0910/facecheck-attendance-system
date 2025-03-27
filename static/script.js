@@ -1,4 +1,13 @@
-// 💬 Hàm hiển thị thông báo
+// ✅ Lấy thông tin người dùng từ localStorage
+window.getCurrentUser = function () {
+  return {
+    user_id: localStorage.getItem("user_id"),
+    user_name: localStorage.getItem("user_name"),
+    role: localStorage.getItem("role")
+  };
+};
+
+// ✅ Hiển thị thông báo ra thẻ <p id=...>
 window.showMessage = function (id, message, success = true) {
   const p = document.getElementById(id);
   if (!p) return;
@@ -6,7 +15,7 @@ window.showMessage = function (id, message, success = true) {
   p.style.color = success ? "green" : "red";
 };
 
-// 📤 Gửi POST JSON chuẩn REST
+// ✅ Gửi POST JSON đúng chuẩn REST API
 const postJSON = async (url, data) => {
   const res = await fetch(url, {
     method: "POST",
@@ -18,7 +27,7 @@ const postJSON = async (url, data) => {
   return res.json();
 };
 
-// 📝 Xử lý form đăng ký người dùng (dành cho register.html)
+// 📝 Đăng ký người dùng (dành cho register.html)
 const infoForm = document.getElementById("infoForm");
 if (infoForm) {
   infoForm.onsubmit = async (e) => {
@@ -44,7 +53,7 @@ if (infoForm) {
   };
 }
 
-// 📸 Xử lý webcam + chụp ảnh (dành cho register.html)
+// 📸 Xử lý chụp ảnh webcam và gửi lên (dành cho register.html)
 const video = document.getElementById("camera");
 const captureFace = document.getElementById("captureFace");
 
