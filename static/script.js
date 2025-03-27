@@ -1,77 +1,73 @@
-// Gửi JSON tới API
-async function postJSON(url, data) {
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
+// 💡 Gửi POST JSON chuẩn
+const postJSON = async (url, data) => {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  });
+  return res.json();
+};
+
+// 📌 Xử lý form đăng ký người dùng
+const infoForm = document.getElementById("infoForm");
+if (infoForm) {
+  infoForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const student_id = document.getElementById("student_id").value.trim();
+    const name = document.getElementById("name").value.trim();
+    const password = document.getElementById("password").value;
+    const role = document.getElementById("role").value;
+
+    if (!student_id || !name || !password) {
+      document.getElementById("infoMsg").textContent = "⚠ Vui lòng nhập đầy đủ thông tin.";
+      return;
+    }
+
+    const result = await postJSON("/register_info", {
+      student_id,
+      name,
+      password,
+      role
     });
-    return await res.json();
-  } catch (e) {
-    return { success: false, message: "❌ Không kết nối được đến server!" };
-  }
+
+    document.getElementById("infoMsg").textContent = result.message;
+  };
 }
 
-// Gửi FormData (cho upload ảnh, file)
-async function postForm(url, formData) {
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      body: formData
+// 📸 Webcam + chụp ảnh và gửi đến API /upload_face
+const video = document.getElementById("camera");
+const captureFace = document.getElementById("captureFace");
+
+if (video && captureFace) {
+  navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+    video.srcObject = stream;
+  }).catch(err => {
+    document.getElementById("faceMsg").textContent = "🚫 Không thể truy cập webcam.";
+    console.error(err);
+  });
+
+  captureFace.onclick = async () => {
+    const student_id = document.getElementById("student_id").value.trim();
+    if (!student_id) {
+      document.getElementById("faceMsg").textContent = "⚠ Vui lòng nhập mã người dùng trước.";
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0);
+
+    const imageBase64 = canvas.toDataURL("image/jpeg");
+
+    const result = await postJSON("/upload_face", {
+      student_id,
+      image_data: imageBase64
     });
-    return await res.json();
-  } catch (e) {
-    return { success: false, message: "❌ Không kết nối được đến server!" };
-  }
-}
 
-// Hiển thị thông báo
-function showMessage(id, text, success = true) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.textContent = text;
-  el.style.color = success ? "green" : "red";
-}
-
-// Mở camera
-function startCamera() {
-  const video = document.getElementById("video");
-  if (!video) return;
-
-  navigator.mediaDevices.getUserMedia({ video: true })
-    .then(stream => {
-      video.srcObject = stream;
-    })
-    .catch(err => {
-      console.error("Không thể truy cập camera:", err);
-      showMessage("faceMsg", "⚠ Không thể bật camera!", false);
-    });
-}
-
-// Chụp ảnh từ webcam → base64
-function captureImage() {
-  const video = document.getElementById("video");
-  const canvas = document.getElementById("canvas");
-  if (!video || !canvas) return "";
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0);
-  return canvas.toDataURL("image/jpeg");
-}
-
-// Đăng xuất (xoá localStorage + về login)
-function logout() {
-  localStorage.clear();
-  window.location.href = "/login.html";
-}
-
-// Lấy thông tin người dùng đang đăng nhập
-function getCurrentUser() {
-  return {
-    user_id: localStorage.getItem("user_id"),
-    user_name: localStorage.getItem("user_name"),
-    role: localStorage.getItem("role")
+    document.getElementById("faceMsg").textContent = result.message;
   };
 }
