@@ -42,9 +42,7 @@
       window.location.href = "/login.html";
     }
 
-    if (user_name) {
-      document.getElementById("teacherName").textContent = user_name;
-    }
+    document.getElementById("teacherName").textContent = user_name;
 
     let allClasses = [];
 
@@ -90,6 +88,7 @@
           <strong>${cls.class_id}</strong> - <span id="name-${cls.class_id}">${cls.class_name}</span>
           <button onclick="editClass('${cls.class_id}')">✏️ Sửa</button>
           <button onclick="deleteClass('${cls.class_id}')">❌ Xoá</button>
+          <button onclick="createSession('${cls.class_id}')">🕒 Tạo phiên điểm danh</button>
           <button onclick="exportAttendance('${cls.class_id}')">📄 Xuất điểm danh</button>
         </div>
       `).join("");
@@ -110,23 +109,31 @@
       const oldName = nameSpan.textContent;
       const newName = prompt("Nhập tên lớp mới:", oldName);
       if (newName && newName !== oldName) {
-        fetch(`/update_class_name?class_id=${class_id}&class_name=${encodeURIComponent(newName)}`, { method: "PUT" })
-          .then(res => res.json())
-          .then(result => {
-            showMessage("actionMsg", result.message || result.detail, result.success !== false);
-            if (result.success) loadClasses();
-          });
+        fetch(`/update_class_name?class_id=${class_id}&class_name=${encodeURIComponent(newName)}`, {
+          method: "PUT"
+        })
+        .then(res => res.json())
+        .then(result => {
+          showMessage("actionMsg", result.message || result.detail, result.success !== false);
+          if (result.success) loadClasses();
+        });
       }
     }
 
-    document.getElementById("searchBox").addEventListener("input", () => {
-      const keyword = document.getElementById("searchBox").value.toLowerCase();
-      const filtered = allClasses.filter(cls =>
-        cls.class_id.toLowerCase().includes(keyword) ||
-        cls.class_name.toLowerCase().includes(keyword)
-      );
-      renderClassList(filtered);
-    });
+    async function createSession(class_id) {
+      const start = prompt("Thời gian bắt đầu (YYYY-MM-DD HH:mm:ss):");
+      const end = prompt("Thời gian kết thúc (YYYY-MM-DD HH:mm:ss):");
+      if (!start || !end) return;
+
+      const res = await fetch("/create_session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ class_id, start_time: start, end_time: end })
+      });
+
+      const result = await res.json();
+      showMessage("actionMsg", result.message || result.detail, result.success !== false);
+    }
 
     async function exportAttendance(class_id) {
       const date = prompt("Nhập ngày điểm danh (YYYY-MM-DD):");
@@ -153,6 +160,15 @@
       link.click();
       document.body.removeChild(link);
     }
+
+    document.getElementById("searchBox").addEventListener("input", () => {
+      const keyword = document.getElementById("searchBox").value.toLowerCase();
+      const filtered = allClasses.filter(cls =>
+        cls.class_id.toLowerCase().includes(keyword) ||
+        cls.class_name.toLowerCase().includes(keyword)
+      );
+      renderClassList(filtered);
+    });
 
     window.onload = loadClasses;
   </script>
