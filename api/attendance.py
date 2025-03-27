@@ -16,6 +16,7 @@ class AttendanceRequest(BaseModel):
     class_id: str
     image_data: str  # Base64 ảnh khuôn mặt
 
+
 def extract_embedding_from_base64(image_base64):
     img_data = base64.b64decode(image_base64.split(",")[1])
     np_arr = np.frombuffer(img_data, np.uint8)
@@ -31,8 +32,10 @@ def extract_embedding_from_base64(image_base64):
     finally:
         os.remove(temp_image_path)
 
+
 def cosine_similarity(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
 
 @router.post("/attendance")
 def mark_attendance(request: AttendanceRequest):
@@ -43,8 +46,8 @@ def mark_attendance(request: AttendanceRequest):
         # Lấy embedding đã lưu
         cursor.execute("SELECT embedding FROM users WHERE user_id = ?", (request.user_id,))
         row = cursor.fetchone()
-        if not row:
-            raise HTTPException(status_code=400, detail="❌ Không tìm thấy người dùng!")
+        if not row or not row["embedding"]:
+            raise HTTPException(status_code=400, detail="❌ Không tìm thấy người dùng hoặc chưa đăng ký khuôn mặt!")
 
         stored_embedding = np.frombuffer(base64.b64decode(row["embedding"]), dtype=np.float32)
 
@@ -60,17 +63,22 @@ def mark_attendance(request: AttendanceRequest):
             if not class_info:
                 raise HTTPException(status_code=400, detail="❌ Không tìm thấy lớp học phần!")
 
-            # Lấy thời gian hiện tại theo múi giờ Việt Nam
-            vn_time = datetime.datetime.now(pytz.timezone("Asia/Ho_Chi_Minh"))
-            class_start_time = datetime.datetime.strptime(class_info["start_time"], "%Y-%m-%d %H:%M:%S")
+            start_time_str = class_info["start_time"]
+            if not start_time_str:
+                raise HTTPException(status_code=400, detail="⚠️ Lớp học phần chưa được cấu hình thời gian điểm danh!")
 
-            status = "Đúng giờ" if vn_time <= class_start_time else "Muộn"
+            class_start_time = datetime.datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S")
+
+            # Lấy giờ hiện tại theo giờ Việt Nam
+            vn_now = datetime.datetime.now(pytz.timezone("Asia/Ho_Chi_Minh"))
+            status = "Đúng giờ" if vn_now <= class_start_time else "Muộn"
 
             cursor.execute(
-                "INSERT INTO attendance (user_id, class_id, timestamp, status, created_at) VALUES (?, ?, ?, ?, ?)",
-                (request.user_id, request.class_id, vn_time.strftime("%Y-%m-%d %H:%M:%S"), status, vn_time.strftime("%Y-%m-%d %H:%M:%S"))
+                "INSERT INTO attendance (user_id, class_id, timestamp, status) VALUES (?, ?, ?, ?)",
+                (request.user_id, request.class_id, vn_now.strftime("%Y-%m-%d %H:%M:%S"), status)
             )
             conn.commit()
+
             return {"success": True, "message": f"✅ Điểm danh thành công! Trạng thái: {status}"}
         else:
             return {"success": False, "message": "❌ Khuôn mặt không khớp!"}
