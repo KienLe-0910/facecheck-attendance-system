@@ -9,12 +9,18 @@
 <body>
   <div class="container">
     <h2>🔐 Đăng nhập hệ thống</h2>
+
     <form id="loginForm">
       <input type="text" name="user_id" placeholder="Mã người dùng" required>
       <input type="password" name="password" placeholder="Mật khẩu" required>
       <button type="submit">Đăng nhập</button>
     </form>
+
     <p id="msg"></p>
+
+    <br>
+    <a href="/register.html">📝 Chưa có tài khoản? Đăng ký tại đây</a><br>
+    <a href="/index.html">← Quay về trang chủ</a>
   </div>
 
   <script>
@@ -30,16 +36,16 @@
         });
 
         if (result.success) {
-          // ✅ Lưu thông tin theo chuẩn mới
+          // ✅ Lưu thông tin người dùng
           localStorage.setItem("user_id", result.user_id);
           localStorage.setItem("user_name", result.user_name);
           localStorage.setItem("role", result.role);
 
-          // 🧹 Xoá thông tin cũ nếu còn
+          // 🧹 Xoá thông tin cũ nếu có
           localStorage.removeItem("student_id");
           localStorage.removeItem("student_name");
 
-          // ✅ Chuyển hướng theo vai trò
+          // ✅ Chuyển trang theo vai trò
           const dashboard = result.role === "teacher"
             ? "/teacher.html"
             : "/student.html";
