@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Sinh viên - Bảng điều khiển</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/script.js" defer></script>
 </head>
 <body>
   <div class="container">
@@ -23,17 +22,26 @@
     <div id="infoArea" style="margin-top: 2rem;"></div>
   </div>
 
+  <script src="/static/script.js"></script>
   <script>
-    const { user_id, user_name, role } = getCurrentUser();
+    let user_id, user_name, role;
 
-    if (!user_id || role !== "student") {
-      alert("Bạn chưa đăng nhập với tư cách sinh viên!");
-      window.location.href = "/login.html";
-    }
+    window.onload = function () {
+      const currentUser = getCurrentUser();
+      user_id = currentUser.user_id;
+      user_name = currentUser.user_name;
+      role = currentUser.role;
 
-    if (user_name) {
-      document.getElementById("studentName").textContent = user_name;
-    }
+      if (!user_id || role !== "student") {
+        alert("Bạn chưa đăng nhập với tư cách sinh viên!");
+        window.location.href = "/login.html";
+        return;
+      }
+
+      if (user_name) {
+        document.getElementById("studentName").textContent = user_name;
+      }
+    };
 
     async function viewRegisteredClasses() {
       const res = await fetch(`/get_student_classes?user_id=${user_id}`);
