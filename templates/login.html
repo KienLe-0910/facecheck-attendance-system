@@ -25,17 +25,21 @@
 
       try {
         const result = await postJSON("/login", {
-          user_id: loginForm.user_id.value.trim(), // 👈 Gửi đúng tên biến theo API
+          user_id: loginForm.user_id.value.trim(),
           password: loginForm.password.value
         });
 
         if (result.success) {
-          // ✅ Lưu thông tin theo chuẩn user_id
+          // ✅ Lưu thông tin theo chuẩn mới
           localStorage.setItem("user_id", result.user_id);
           localStorage.setItem("user_name", result.user_name);
           localStorage.setItem("role", result.role);
 
-          // ✅ Chuyển hướng dashboard theo vai trò
+          // 🧹 Xoá thông tin cũ nếu còn
+          localStorage.removeItem("student_id");
+          localStorage.removeItem("student_name");
+
+          // ✅ Chuyển hướng theo vai trò
           const dashboard = result.role === "teacher"
             ? "/teacher.html"
             : "/student.html";
