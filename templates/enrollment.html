@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Đăng ký lớp học phần</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/script.js" defer></script>
+  <script src="/static/script.js"></script>
 </head>
 <body>
   <div class="container">
@@ -21,24 +21,24 @@
   </div>
 
   <script>
-    const { user_id, role } = getCurrentUser();
+    window.onload = function () {
+      const { user_id, role } = getCurrentUser();
 
-    if (!user_id || role !== "student") {
-      alert("Bạn chưa đăng nhập với tư cách sinh viên!");
-      window.location.href = "/login.html";
-    }
-
-    document.getElementById("enrollForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const input = document.getElementById("class_id");
-      const class_id = input.value.trim();
-
-      if (!class_id) {
-        showMessage("msg", "⚠️ Vui lòng nhập mã lớp học phần!", false);
+      if (!user_id || role !== "student") {
+        alert("Bạn chưa đăng nhập với tư cách sinh viên!");
+        window.location.href = "/login.html";
         return;
       }
 
-      try {
+      document.getElementById("enrollForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const class_id = document.getElementById("class_id").value.trim();
+
+        if (!class_id) {
+          showMessage("msg", "⚠️ Vui lòng nhập mã lớp học phần!", false);
+          return;
+        }
+
         const res = await fetch("/enroll_class", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -49,13 +49,10 @@
         showMessage("msg", data.message || data.detail, data.success !== false);
 
         if (data.success) {
-          input.value = "";
+          document.getElementById("enrollForm").reset();
         }
-      } catch (err) {
-        showMessage("msg", "❌ Lỗi khi gửi yêu cầu đến server!", false);
-        console.error(err);
-      }
-    });
+      });
+    };
   </script>
 </body>
 </html>
