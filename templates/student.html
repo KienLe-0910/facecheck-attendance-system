@@ -16,8 +16,9 @@
       <a href="/enrollment.html">🧩 Đăng ký lớp học phần</a>
       <button onclick="viewRegisteredClasses()">📚 Lớp đã đăng ký</button>
       <button onclick="viewAttendanceHistory()">🕒 Lịch sử điểm danh</button>
-      <button onclick="logout()">🚪 Đăng xuất</button>
     </div>
+
+    <button style="margin-top: 2rem;" onclick="logout()">🚪 Đăng xuất</button>
 
     <div id="infoArea" style="margin-top: 2rem;"></div>
   </div>
@@ -26,7 +27,7 @@
     const { user_id, user_name, role } = getCurrentUser();
 
     if (!user_id || role !== "student") {
-      alert("Bạn chưa đăng nhập đúng vai trò!");
+      alert("Bạn chưa đăng nhập với tư cách sinh viên!");
       window.location.href = "/login.html";
     }
 
@@ -65,10 +66,10 @@
 
       if (result.success) {
         if (result.data.length === 0) {
-          area.innerHTML = `<p>Chưa có lịch sử điểm danh trong lớp ${classId}.</p>`;
+          area.innerHTML = `<p>Chưa có lịch sử điểm danh trong lớp <strong>${classId}</strong>.</p>`;
         } else {
           const html = result.data.map(r => `<li>${r.timestamp} - ${r.status}</li>`).join("");
-          area.innerHTML = `<h3>🕒 Lịch sử điểm danh lớp ${classId}:</h3><ul>${html}</ul>`;
+          area.innerHTML = `<h3>🕒 Lịch sử điểm danh lớp <strong>${classId}</strong>:</h3><ul>${html}</ul>`;
         }
       } else {
         area.innerHTML = `<p style="color:red;">${result.message}</p>`;
@@ -77,7 +78,11 @@
 
     async function unenrollClass(classId) {
       if (!confirm(`Bạn có chắc chắn muốn huỷ đăng ký lớp ${classId}?`)) return;
-      const res = await fetch(`/unenroll_class?user_id=${user_id}&class_id=${classId}`, { method: "DELETE" });
+
+      const res = await fetch(`/unenroll_class?user_id=${user_id}&class_id=${classId}`, {
+        method: "DELETE"
+      });
+
       const result = await res.json();
       alert(result.message);
       if (result.success) viewRegisteredClasses();
