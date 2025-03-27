@@ -23,42 +23,46 @@
   </div>
 
   <script>
-    const studentId = localStorage.getItem("student_id");
-    const name = localStorage.getItem("student_name");
-    const role = localStorage.getItem("role");
+    const { user_id, user_name, role } = getCurrentUser();
 
-    if (!studentId || role !== "student") {
+    if (!user_id || role !== "student") {
+      alert("Bạn chưa đăng nhập đúng vai trò!");
       window.location.href = "/login.html";
     }
 
-    if (name) {
-      document.getElementById("studentName").textContent = name;
+    if (user_name) {
+      document.getElementById("studentName").textContent = user_name;
     }
 
     async function viewRegisteredClasses() {
-      const res = await fetch(`/get_student_classes?student_id=${studentId}`);
+      const res = await fetch(`/get_student_classes?user_id=${user_id}`);
       const result = await res.json();
       const area = document.getElementById("infoArea");
+
       if (result.success) {
         if (result.data.length === 0) {
           area.innerHTML = "<p>Bạn chưa đăng ký lớp học phần nào.</p>";
         } else {
           const html = result.data.map(cls => `
-            <div><strong>${cls.class_id}</strong> - ${cls.class_name} <button onclick=\"unenrollClass('${cls.class_id}')\">❌ Huỷ</button></div>
+            <div>
+              <strong>${cls.class_id}</strong> - ${cls.class_name}
+              <button onclick="unenrollClass('${cls.class_id}')">❌ Huỷ</button>
+            </div>
           `).join("");
           area.innerHTML = `<h3>📚 Lớp đã đăng ký:</h3>` + html;
         }
       } else {
-        area.innerHTML = `<p style='color:red;'>${result.message}</p>`;
+        area.innerHTML = `<p style="color:red;">${result.message}</p>`;
       }
     }
 
     async function viewAttendanceHistory() {
       const classId = prompt("Nhập mã lớp học phần để xem lịch sử điểm danh:");
       if (!classId) return;
-      const res = await fetch(`/student_attendance_history?student_id=${studentId}&class_id=${classId}`);
+      const res = await fetch(`/student_attendance_history?user_id=${user_id}&class_id=${classId}`);
       const result = await res.json();
       const area = document.getElementById("infoArea");
+
       if (result.success) {
         if (result.data.length === 0) {
           area.innerHTML = `<p>Chưa có lịch sử điểm danh trong lớp ${classId}.</p>`;
@@ -67,13 +71,13 @@
           area.innerHTML = `<h3>🕒 Lịch sử điểm danh lớp ${classId}:</h3><ul>${html}</ul>`;
         }
       } else {
-        area.innerHTML = `<p style='color:red;'>${result.message}</p>`;
+        area.innerHTML = `<p style="color:red;">${result.message}</p>`;
       }
     }
 
     async function unenrollClass(classId) {
       if (!confirm(`Bạn có chắc chắn muốn huỷ đăng ký lớp ${classId}?`)) return;
-      const res = await fetch(`/unenroll_class?student_id=${studentId}&class_id=${classId}`, { method: "DELETE" });
+      const res = await fetch(`/unenroll_class?user_id=${user_id}&class_id=${classId}`, { method: "DELETE" });
       const result = await res.json();
       alert(result.message);
       if (result.success) viewRegisteredClasses();
