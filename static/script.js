@@ -1,4 +1,12 @@
-// 💡 Gửi POST JSON chuẩn
+// 💬 Hàm hiển thị thông báo
+window.showMessage = function (id, message, success = true) {
+  const p = document.getElementById(id);
+  if (!p) return;
+  p.textContent = message;
+  p.style.color = success ? "green" : "red";
+};
+
+// 📤 Gửi POST JSON chuẩn REST
 const postJSON = async (url, data) => {
   const res = await fetch(url, {
     method: "POST",
@@ -10,7 +18,7 @@ const postJSON = async (url, data) => {
   return res.json();
 };
 
-// 📌 Xử lý form đăng ký người dùng
+// 📝 Xử lý form đăng ký người dùng (dành cho register.html)
 const infoForm = document.getElementById("infoForm");
 if (infoForm) {
   infoForm.onsubmit = async (e) => {
@@ -21,7 +29,7 @@ if (infoForm) {
     const role = document.getElementById("role").value;
 
     if (!student_id || !name || !password) {
-      document.getElementById("infoMsg").textContent = "⚠ Vui lòng nhập đầy đủ thông tin.";
+      showMessage("infoMsg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
       return;
     }
 
@@ -32,11 +40,11 @@ if (infoForm) {
       role
     });
 
-    document.getElementById("infoMsg").textContent = result.message;
+    showMessage("infoMsg", result.message, result.success !== false);
   };
 }
 
-// 📸 Webcam + chụp ảnh và gửi đến API /upload_face
+// 📸 Xử lý webcam + chụp ảnh (dành cho register.html)
 const video = document.getElementById("camera");
 const captureFace = document.getElementById("captureFace");
 
@@ -44,14 +52,14 @@ if (video && captureFace) {
   navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
     video.srcObject = stream;
   }).catch(err => {
-    document.getElementById("faceMsg").textContent = "🚫 Không thể truy cập webcam.";
+    showMessage("faceMsg", "🚫 Không thể truy cập webcam.", false);
     console.error(err);
   });
 
   captureFace.onclick = async () => {
     const student_id = document.getElementById("student_id").value.trim();
     if (!student_id) {
-      document.getElementById("faceMsg").textContent = "⚠ Vui lòng nhập mã người dùng trước.";
+      showMessage("faceMsg", "⚠ Vui lòng nhập mã người dùng trước.", false);
       return;
     }
 
@@ -68,6 +76,6 @@ if (video && captureFace) {
       image_data: imageBase64
     });
 
-    document.getElementById("faceMsg").textContent = result.message;
+    showMessage("faceMsg", result.message, result.success !== false);
   };
 }
