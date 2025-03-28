@@ -88,3 +88,9 @@ if (video && captureFace) {
     showMessage("faceMsg", result.message, result.success !== false);
   };
 }
+
+// ✅ Hàm đăng xuất chung cho mọi trang
+window.logout = function () {
+  localStorage.clear();
+  window.location.href = "/login.html";
+};
