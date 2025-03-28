@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Đăng ký lớp học phần</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/script.js"></script>
+  <script src="/static/script.js" defer></script>
 </head>
 <body>
   <div class="container">
@@ -21,40 +21,45 @@
   </div>
 
   <script>
-    const { user_id, role } = getCurrentUser();
+    document.addEventListener("DOMContentLoaded", () => {
+      const { user_id, role } = getCurrentUser();
 
-    if (!user_id || role !== "student") {
-      alert("Bạn chưa đăng nhập với tư cách sinh viên!");
-      window.location.href = "/login.html";
-    }
-
-    document.getElementById("enrollForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const input = document.getElementById("class_id");
-      const class_id = input.value.trim();
-
-      if (!class_id) {
-        showMessage("msg", "⚠️ Vui lòng nhập mã lớp học phần!", false);
+      if (!user_id || role !== "student") {
+        alert("Bạn chưa đăng nhập với tư cách sinh viên!");
+        window.location.href = "/login.html";
         return;
       }
 
-      try {
-        const res = await fetch("/enroll_class", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id, class_id })
-        });
+      const enrollForm = document.getElementById("enrollForm");
+      const input = document.getElementById("class_id");
 
-        const data = await res.json();
-        showMessage("msg", data.message || data.detail, data.success !== false);
+      enrollForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const class_id = input.value.trim();
 
-        if (data.success) {
-          input.value = "";
+        if (!class_id) {
+          showMessage("msg", "⚠️ Vui lòng nhập mã lớp học phần!", false);
+          return;
         }
-      } catch (err) {
-        showMessage("msg", "❌ Lỗi khi gửi yêu cầu đến server!", false);
-        console.error(err);
-      }
+
+        try {
+          const res = await fetch("/enroll_class", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id, class_id })
+          });
+
+          const data = await res.json();
+          showMessage("msg", data.message || data.detail, data.success !== false);
+
+          if (data.success) {
+            input.value = "";
+          }
+        } catch (err) {
+          showMessage("msg", "❌ Lỗi khi gửi yêu cầu đến server!", false);
+          console.error(err);
+        }
+      });
     });
   </script>
 </body>
