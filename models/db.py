@@ -53,12 +53,11 @@ def init_db():
             created_at TEXT NOT NULL
         )''')
 
-        # Bảng điểm danh
+        # ✅ Bảng điểm danh (đã loại bỏ timestamp, chỉ dùng created_at)
         cursor.execute('''CREATE TABLE IF NOT EXISTS attendance (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id TEXT NOT NULL,
             session_id INTEGER NOT NULL,
-            timestamp TEXT NOT NULL,
             status TEXT CHECK(status IN ('on-time', 'late')) NOT NULL,
             created_at TEXT NOT NULL
         )''')
