@@ -61,19 +61,21 @@
 
       // 🕒 Xem lịch sử điểm danh
       window.viewAttendanceHistory = async function () {
-        const sessionId = prompt("Nhập ID phiên điểm danh để xem lịch sử:");
-        if (!sessionId) return;
+        const classId = prompt("Nhập mã lớp học phần (class_id) để xem lịch sử điểm danh:");
+        if (!classId) return;
 
-        const res = await fetch(`/student_attendance_history?user_id=${user_id}&session_id=${sessionId}`);
+        const res = await fetch(`/student_attendance_history?user_id=${user_id}&class_id=${classId}`);
         const result = await res.json();
         const area = document.getElementById("infoArea");
 
         if (result.success) {
           if (result.data.length === 0) {
-            area.innerHTML = `<p>Chưa có lịch sử điểm danh trong phiên <strong>${sessionId}</strong>.</p>`;
+            area.innerHTML = `<p>Chưa có lịch sử điểm danh trong lớp <strong>${classId}</strong>.</p>`;
           } else {
-            const html = result.data.map(r => `<li>🕓 <strong>${r.timestamp}</strong> — <em>${r.status}</em></li>`).join("");
-            area.innerHTML = `<h3>🕒 Lịch sử điểm danh phiên <strong>${sessionId}</strong>:</h3><ul>${html}</ul>`;
+            const html = result.data.map(r => `
+              <li>🕓 <strong>${r.created_at}</strong> — <em>${r.status}</em> (Phiên: ${r.session_id})</li>
+            `).join("");
+            area.innerHTML = `<h3>🕒 Lịch sử điểm danh lớp <strong>${classId}</strong>:</h3><ul>${html}</ul>`;
           }
         } else {
           area.innerHTML = `<p style="color:red;">${result.message}</p>`;
