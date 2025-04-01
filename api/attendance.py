@@ -59,9 +59,11 @@ def mark_attendance(request: AttendanceRequest):
         if not session:
             raise HTTPException(status_code=404, detail="❌ Phiên điểm danh không tồn tại!")
 
-        start_time = datetime.datetime.strptime(session["start_time"], "%Y-%m-%d %H:%M:%S")
-        end_time = datetime.datetime.strptime(session["end_time"], "%Y-%m-%d %H:%M:%S")
-        now = datetime.datetime.now(pytz.timezone("Asia/Ho_Chi_Minh"))
+        vn_tz = pytz.timezone("Asia/Ho_Chi_Minh")
+        now = datetime.datetime.now(vn_tz)
+
+        start_time = vn_tz.localize(datetime.datetime.strptime(session["start_time"], "%Y-%m-%d %H:%M:%S"))
+        end_time = vn_tz.localize(datetime.datetime.strptime(session["end_time"], "%Y-%m-%d %H:%M:%S"))
 
         if not (start_time <= now <= end_time):
             return {"success": False, "message": "⚠ Ngoài thời gian điểm danh!"}
@@ -86,6 +88,31 @@ def mark_attendance(request: AttendanceRequest):
 
     except HTTPException as he:
         raise he
+    except Exception as e:
+        return {"success": False, "message": f"Lỗi hệ thống: {str(e)}"}
+    finally:
+        conn.close()
+
+# ✅ API: Lấy danh sách phiên điểm danh khả dụng cho sinh viên
+@router.get("/get_available_sessions")
+def get_available_sessions(user_id: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        now = datetime.datetime.now(pytz.timezone("Asia/Ho_Chi_Minh")).strftime("%Y-%m-%d %H:%M:%S")
+
+        cursor.execute("""
+            SELECT s.id AS session_id, s.class_id, c.class_name, s.start_time, s.end_time
+            FROM sessions s
+            JOIN classes c ON s.class_id = c.class_id
+            JOIN enrollments e ON e.class_id = s.class_id
+            WHERE e.user_id = ? AND s.end_time >= ?
+            ORDER BY s.start_time ASC
+        """, (user_id, now))
+
+        sessions = cursor.fetchall()
+        data = [dict(row) for row in sessions]
+        return {"success": True, "data": data}
     except Exception as e:
         return {"success": False, "message": f"Lỗi hệ thống: {str(e)}"}
     finally:
