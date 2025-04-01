@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Điểm danh khuôn mặt</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/script.js"></script>
+  <script src="/static/script.js" defer></script>
 </head>
 <body>
   <div class="container">
@@ -26,59 +26,85 @@
   </div>
 
   <script>
-    const { user_id, role } = getCurrentUser();
-    if (!user_id || role !== "student") {
-      alert("Bạn chưa đăng nhập với tư cách sinh viên!");
-      window.location.href = "/login.html";
-    }
-
-    let imageData = "";
-
-    // Load danh sách phiên điểm danh
-    async function loadSessions() {
-      const res = await fetch(`/get_available_sessions?user_id=${user_id}`);
-      const result = await res.json();
-      const select = document.getElementById("session_id");
-
-      if (result.success && result.data.length > 0) {
-        result.data.forEach(session => {
-          const opt = document.createElement("option");
-          opt.value = session.session_id;
-          opt.textContent = `${session.class_name} (${session.start_time} - ${session.end_time})`;
-          select.appendChild(opt);
-        });
-      } else {
-        showMessage("msg", "⚠️ Không có phiên điểm danh khả dụng!", false);
-        document.getElementById("attendanceForm").style.display = "none";
-      }
-    }
-
-    // Mở camera
-    startCamera();
-    loadSessions();
-
-    document.getElementById("captureBtn").onclick = () => {
-      imageData = captureImage();
-      showMessage("msg", "✅ Đã chụp ảnh khuôn mặt. Bấm 'Xác nhận điểm danh' để gửi.", true);
-    };
-
-    document.getElementById("attendanceForm").onsubmit = async (e) => {
-      e.preventDefault();
-      if (!imageData) {
-        showMessage("msg", "⚠️ Vui lòng chụp ảnh trước khi điểm danh!", false);
+    document.addEventListener("DOMContentLoaded", () => {
+      const { user_id, role } = getCurrentUser();
+      if (!user_id || role !== "student") {
+        alert("Bạn chưa đăng nhập với tư cách sinh viên!");
+        window.location.href = "/login.html";
         return;
       }
 
-      const session_id = document.getElementById("session_id").value;
+      let imageData = "";
 
-      const result = await postJSON("/attendance", {
-        user_id,
-        session_id,
-        image_data: imageData
-      });
+      // ✅ Mở camera
+      async function startCamera() {
+        const video = document.getElementById("video");
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          video.srcObject = stream;
+        } catch (err) {
+          showMessage("msg", "🚫 Không thể truy cập camera!", false);
+          console.error(err);
+        }
+      }
 
-      showMessage("msg", result.message || result.detail, result.success !== false);
-    };
+      // ✅ Chụp ảnh từ video
+      function captureImage() {
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0);
+        return canvas.toDataURL("image/jpeg");
+      }
+
+      // ✅ Load danh sách phiên điểm danh
+      async function loadSessions() {
+        const res = await fetch(`/get_available_sessions?user_id=${user_id}`);
+        const result = await res.json();
+        const select = document.getElementById("session_id");
+
+        if (result.success && result.data.length > 0) {
+          result.data.forEach(session => {
+            const opt = document.createElement("option");
+            opt.value = session.session_id;
+            opt.textContent = `${session.class_name} (${session.start_time} - ${session.end_time})`;
+            select.appendChild(opt);
+          });
+        } else {
+          showMessage("msg", "⚠️ Không có phiên điểm danh khả dụng!", false);
+          document.getElementById("attendanceForm").style.display = "none";
+        }
+      }
+
+      // Gọi các hàm khi DOM đã sẵn sàng
+      startCamera();
+      loadSessions();
+
+      document.getElementById("captureBtn").onclick = () => {
+        imageData = captureImage();
+        showMessage("msg", "✅ Đã chụp ảnh khuôn mặt. Bấm 'Xác nhận điểm danh' để gửi.", true);
+      };
+
+      document.getElementById("attendanceForm").onsubmit = async (e) => {
+        e.preventDefault();
+        if (!imageData) {
+          showMessage("msg", "⚠️ Vui lòng chụp ảnh trước khi điểm danh!", false);
+          return;
+        }
+
+        const session_id = document.getElementById("session_id").value;
+
+        const result = await postJSON("/attendance", {
+          user_id,
+          session_id,
+          image_data: imageData
+        });
+
+        showMessage("msg", result.message || result.detail, result.success !== false);
+      };
+    });
   </script>
 </body>
 </html>
