@@ -46,11 +46,11 @@ def get_attendance_history(user_id: str, class_id: str):
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            SELECT a.timestamp, a.status, s.session_id
+            SELECT a.created_at, a.status, s.id AS session_id
             FROM attendance a
-            JOIN sessions s ON a.session_id = s.session_id
+            JOIN sessions s ON a.session_id = s.id
             WHERE a.user_id = ? AND s.class_id = ?
-            ORDER BY a.timestamp DESC
+            ORDER BY a.created_at DESC
         """, (user_id, class_id))
         rows = cursor.fetchall()
         history = [dict(row) for row in rows]
