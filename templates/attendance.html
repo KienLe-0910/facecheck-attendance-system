@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Điểm danh khuôn mặt</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
   <script src="/static/script.js" defer></script>
 </head>
 <body>
@@ -12,12 +12,12 @@
     <h2>📸 Điểm danh bằng khuôn mặt</h2>
 
     <form id="attendanceForm">
-      <label for="session_id">Chọn phiên điểm danh:</label>
-      <select id="session_id" required></select>
+      <label for="session_id">Chọn phiên điểm danh:</label><br>
+      <select id="session_id" required></select><br>
 
-      <div style="position: relative; width: fit-content;">
-        <video id="video" autoplay playsinline style="z-index:1;"></video>
-        <canvas id="overlay" style="position:absolute; top:0; left:0; pointer-events:none; z-index:2;"></canvas>
+      <div class="video-wrapper" style="margin-top: 1rem;">
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="overlay"></canvas>
       </div>
 
       <button type="button" id="captureBtn">📸 Chụp khuôn mặt</button>
@@ -27,67 +27,5 @@
     <p id="msg" style="margin-top: 1rem;"></p>
     <button onclick="window.location.href='/student.html'">⬅️ Quay lại</button>
   </div>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", async () => {
-      const { user_id, role } = getCurrentUser();
-      if (!user_id || role !== "student") {
-        alert("Bạn chưa đăng nhập với tư cách sinh viên!");
-        window.location.href = "/login.html";
-        return;
-      }
-
-      let imageData = "";
-
-      // ✅ Bắt đầu camera và overlay bounding box
-      await startFaceDetectionOverlay("video", "overlay");
-
-      // ✅ Chụp ảnh khuôn mặt khi bấm nút
-      document.getElementById("captureBtn").onclick = async () => {
-        const result = await captureFaceFromVideo("video");
-        if (!result) {
-          showMessage("msg", "⚠️ Không phát hiện được khuôn mặt!", false);
-          return;
-        }
-        imageData = result;
-        showMessage("msg", "✅ Đã chụp khuôn mặt. Bấm xác nhận để gửi.", true);
-      };
-
-      // ✅ Gửi dữ liệu điểm danh
-      document.getElementById("attendanceForm").onsubmit = async (e) => {
-        e.preventDefault();
-        if (!imageData) {
-          showMessage("msg", "⚠️ Vui lòng chụp ảnh khuôn mặt trước!", false);
-          return;
-        }
-
-        const session_id = document.getElementById("session_id").value;
-        const result = await postJSON("/attendance", {
-          user_id,
-          session_id,
-          image_data: imageData
-        });
-
-        showMessage("msg", result.message || result.detail, result.success !== false);
-      };
-
-      // ✅ Tải phiên điểm danh
-      const res = await fetch(`/get_available_sessions?user_id=${user_id}`);
-      const result = await res.json();
-      const select = document.getElementById("session_id");
-
-      if (result.success && result.data.length > 0) {
-        result.data.forEach(session => {
-          const opt = document.createElement("option");
-          opt.value = session.session_id;
-          opt.textContent = `${session.class_name} (${session.start_time} - ${session.end_time})`;
-          select.appendChild(opt);
-        });
-      } else {
-        showMessage("msg", "⚠️ Không có phiên điểm danh khả dụng!", false);
-        document.getElementById("attendanceForm").style.display = "none";
-      }
-    });
-  </script>
 </body>
 </html>
