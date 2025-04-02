@@ -33,57 +33,48 @@ window.logout = function () {
   window.location.href = "/login.html";
 };
 
-// ✅ Hàm dùng chung: khởi tạo camera + overlay oval
-window.initCameraWithOverlay = async function (videoId, overlayId) {
+// ✅ 🧠 Hàm dùng chung: bật camera và vẽ bounding box
+window.startFaceDetectionOverlay = async function (videoId, overlayId) {
   const video = document.getElementById(videoId);
-  const overlay = document.getElementById(overlayId);
+  const canvas = document.getElementById(overlayId);
+  const ctx = canvas.getContext("2d");
 
-  if (!video || !overlay) return;
+  // Tải model
+  await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
 
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    video.srcObject = stream;
-  } catch (err) {
-    console.error("🚫 Không thể truy cập webcam:", err);
-    return;
-  }
+  // Bật camera
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  video.srcObject = stream;
 
-  const ctx = overlay.getContext("2d");
+  // Khi video play → bắt đầu vẽ
+  video.addEventListener("play", () => {
+    const drawLoop = async () => {
+      if (video.readyState >= 2) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
 
-  function drawOval() {
-    if (video.readyState >= 2) {
-      overlay.width = video.videoWidth;
-      overlay.height = video.videoHeight;
-
-      ctx.clearRect(0, 0, overlay.width, overlay.height);
-
-      const centerX = overlay.width / 2;
-      const centerY = overlay.height / 2;
-      const radiusX = overlay.width / 5;
-      const radiusY = overlay.height / 3;
-
-      ctx.beginPath();
-      ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
-      ctx.strokeStyle = "lime";
-      ctx.lineWidth = 3;
-      ctx.stroke();
-    }
-    requestAnimationFrame(drawOval);
-  }
-
-  drawOval();
+        const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        faceapi.draw.drawDetections(canvas, detections);
+      }
+      requestAnimationFrame(drawLoop);
+    };
+    drawLoop();
+  });
 };
 
-// ✅ Hàm dùng chung: chụp ảnh từ camera
-window.captureImageFromVideo = function (videoId) {
+// ✅ ✂️ Hàm dùng chung: crop đúng khuôn mặt từ video
+window.captureFaceFromVideo = async function (videoId) {
   const video = document.getElementById(videoId);
-  if (!video || video.readyState < 2) return null;
+  const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
+  if (!detection) return null;
 
+  const { x, y, width, height } = detection.box;
   const canvas = document.createElement("canvas");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  canvas.width = width;
+  canvas.height = height;
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0);
+  ctx.drawImage(video, x, y, width, height, 0, 0, width, height);
   return canvas.toDataURL("image/jpeg");
 };
 
@@ -123,9 +114,9 @@ if (captureFace) {
       return;
     }
 
-    const imageBase64 = captureImageFromVideo("camera");
+    const imageBase64 = await captureFaceFromVideo("camera");
     if (!imageBase64) {
-      showMessage("faceMsg", "⚠ Chưa sẵn sàng chụp ảnh!", false);
+      showMessage("faceMsg", "⚠ Không phát hiện được khuôn mặt!", false);
       return;
     }
 
