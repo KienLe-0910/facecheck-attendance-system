@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Điểm danh khuôn mặt</title>
   <link rel="stylesheet" href="/static/style.css">
+  <!-- ✅ Face API bản UMD dành cho trình duyệt -->
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
   <script src="/static/script.js" defer></script>
 </head>
 <body>
@@ -14,19 +16,21 @@
       <label for="session_id">Chọn phiên điểm danh:</label>
       <select id="session_id" required></select>
 
-      <video id="video" autoplay></video>
-      <canvas id="canvas" style="display:none;"></canvas>
+      <div style="position: relative; width: fit-content;">
+        <video id="video" autoplay playsinline style="z-index:1;"></video>
+        <canvas id="overlay" style="position:absolute; top:0; left:0; pointer-events:none; z-index:2;"></canvas>
+      </div>
 
-      <button type="button" id="captureBtn">Chụp khuôn mặt</button>
-      <button type="submit">Xác nhận điểm danh</button>
+      <button type="button" id="captureBtn">📸 Chụp khuôn mặt</button>
+      <button type="submit">✅ Xác nhận điểm danh</button>
     </form>
 
-    <p id="msg"></p>
+    <p id="msg" style="margin-top: 1rem;"></p>
     <button onclick="window.location.href='/student.html'">⬅️ Quay lại</button>
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
       const { user_id, role } = getCurrentUser();
       if (!user_id || role !== "student") {
         alert("Bạn chưa đăng nhập với tư cách sinh viên!");
@@ -35,67 +39,60 @@
       }
 
       let imageData = "";
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("overlay");
+      const ctx = canvas.getContext("2d");
+
+      // ✅ Load model từ /models (đã được mount trong FastAPI)
+      await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
 
       // ✅ Mở camera
-      async function startCamera() {
-        const video = document.getElementById("video");
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          video.srcObject = stream;
-        } catch (err) {
-          showMessage("msg", "🚫 Không thể truy cập camera!", false);
-          console.error(err);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+
+      video.addEventListener("play", () => {
+        const drawLoop = async () => {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          faceapi.draw.drawDetections(canvas, detections);
+
+          requestAnimationFrame(drawLoop);
+        };
+        drawLoop();
+      });
+
+      // ✅ Chụp và crop khuôn mặt
+      document.getElementById("captureBtn").onclick = async () => {
+        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
+        if (!detection) {
+          showMessage("msg", "⚠️ Không phát hiện được khuôn mặt!", false);
+          return;
         }
-      }
 
-      // ✅ Chụp ảnh từ video
-      function captureImage() {
-        const video = document.getElementById("video");
-        const canvas = document.getElementById("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(video, 0, 0);
-        return canvas.toDataURL("image/jpeg");
-      }
+        const { x, y, width, height } = detection.box;
 
-      // ✅ Load danh sách phiên điểm danh
-      async function loadSessions() {
-        const res = await fetch(`/get_available_sessions?user_id=${user_id}`);
-        const result = await res.json();
-        const select = document.getElementById("session_id");
+        const faceCanvas = document.createElement("canvas");
+        faceCanvas.width = width;
+        faceCanvas.height = height;
+        const faceCtx = faceCanvas.getContext("2d");
+        faceCtx.drawImage(video, x, y, width, height, 0, 0, width, height);
 
-        if (result.success && result.data.length > 0) {
-          result.data.forEach(session => {
-            const opt = document.createElement("option");
-            opt.value = session.session_id;
-            opt.textContent = `${session.class_name} (${session.start_time} - ${session.end_time})`;
-            select.appendChild(opt);
-          });
-        } else {
-          showMessage("msg", "⚠️ Không có phiên điểm danh khả dụng!", false);
-          document.getElementById("attendanceForm").style.display = "none";
-        }
-      }
-
-      // Gọi các hàm khi DOM đã sẵn sàng
-      startCamera();
-      loadSessions();
-
-      document.getElementById("captureBtn").onclick = () => {
-        imageData = captureImage();
-        showMessage("msg", "✅ Đã chụp ảnh khuôn mặt. Bấm 'Xác nhận điểm danh' để gửi.", true);
+        imageData = faceCanvas.toDataURL("image/jpeg");
+        showMessage("msg", "✅ Đã chụp khuôn mặt. Bấm xác nhận để gửi.", true);
       };
 
+      // ✅ Gửi dữ liệu điểm danh
       document.getElementById("attendanceForm").onsubmit = async (e) => {
         e.preventDefault();
         if (!imageData) {
-          showMessage("msg", "⚠️ Vui lòng chụp ảnh trước khi điểm danh!", false);
+          showMessage("msg", "⚠️ Vui lòng chụp ảnh khuôn mặt trước!", false);
           return;
         }
 
         const session_id = document.getElementById("session_id").value;
-
         const result = await postJSON("/attendance", {
           user_id,
           session_id,
@@ -104,6 +101,23 @@
 
         showMessage("msg", result.message || result.detail, result.success !== false);
       };
+
+      // ✅ Tải phiên điểm danh từ backend
+      const res = await fetch(`/get_available_sessions?user_id=${user_id}`);
+      const result = await res.json();
+      const select = document.getElementById("session_id");
+
+      if (result.success && result.data.length > 0) {
+        result.data.forEach(session => {
+          const opt = document.createElement("option");
+          opt.value = session.session_id;
+          opt.textContent = `${session.class_name} (${session.start_time} - ${session.end_time})`;
+          select.appendChild(opt);
+        });
+      } else {
+        showMessage("msg", "⚠️ Không có phiên điểm danh khả dụng!", false);
+        document.getElementById("attendanceForm").style.display = "none";
+      }
     });
   </script>
 </body>
