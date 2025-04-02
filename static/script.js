@@ -7,7 +7,7 @@ window.getCurrentUser = function () {
   };
 };
 
-// ✅ Hiển thị thông báo ra <p id=...>
+// ✅ Hiển thị thông báo ra thẻ <p id=...>
 window.showMessage = function (id, message, success = true) {
   const p = document.getElementById(id);
   if (!p) return;
@@ -31,7 +31,44 @@ window.logout = function () {
   window.location.href = "/login.html";
 };
 
-// ✅ Bật camera + vẽ bounding box khuôn mặt (cho attendance, register)
+// ✅ Đăng nhập (login.html) – Đã sửa lỗi `user_id` undefined
+const loginForm = document.getElementById("loginForm");
+if (loginForm) {
+  loginForm.onsubmit = async (e) => {
+    e.preventDefault();
+
+    const user_id = document.getElementById("user_id").value.trim();
+    const password = document.getElementById("password").value;
+
+    if (!user_id || !password) {
+      showMessage("loginMsg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
+      return;
+    }
+
+    try {
+      const res = await postJSON("/login", { user_id, password });
+
+      if (res.success) {
+        // ✅ Lưu thông tin vào localStorage
+        localStorage.setItem("user_id", res.user_id);
+        localStorage.setItem("user_name", res.user_name);
+        localStorage.setItem("role", res.role);
+
+        // ✅ Thông báo & chuyển trang
+        showMessage("loginMsg", res.message || "✅ Đăng nhập thành công!", true);
+        const dashboard = res.role === "teacher" ? "/teacher.html" : "/student.html";
+        setTimeout(() => window.location.href = dashboard, 1000);
+      } else {
+        showMessage("loginMsg", res.message || "❌ Đăng nhập thất bại!", false);
+      }
+    } catch (err) {
+      showMessage("loginMsg", "❌ Lỗi kết nối đến server!", false);
+      console.error(err);
+    }
+  };
+}
+
+// ✅ Bật camera + vẽ bounding box (dùng cho attendance, register)
 window.startFaceDetectionOverlay = async function (videoId, canvasId) {
   await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
 
@@ -67,7 +104,7 @@ window.startFaceDetectionOverlay = async function (videoId, canvasId) {
   });
 };
 
-// ✅ Chụp ảnh từ video, chỉ vùng khuôn mặt
+// ✅ Chụp ảnh từ video – chỉ vùng mặt
 window.captureFaceFromVideo = async function (videoId) {
   const video = document.getElementById(videoId);
   const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
@@ -109,7 +146,7 @@ if (infoForm) {
   };
 }
 
-// 📸 Gửi ảnh khuôn mặt khi đăng ký (register.html)
+// 📸 Gửi ảnh khuôn mặt khi đăng ký
 const captureBtn = document.getElementById("captureFace");
 if (captureBtn) {
   captureBtn.onclick = async () => {
@@ -134,32 +171,7 @@ if (captureBtn) {
   };
 }
 
-// 🔐 Đăng nhập (login.html)
-const loginForm = document.getElementById("loginForm");
-if (loginForm) {
-  loginForm.onsubmit = async (e) => {
-    e.preventDefault();
-    const user_id = document.getElementById("user_id").value.trim();
-    const password = document.getElementById("password").value;
-
-    if (!user_id || !password) {
-      showMessage("loginMsg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
-      return;
-    }
-
-    const res = await postJSON("/login", { user_id, password });
-    if (res.success) {
-      localStorage.setItem("user_id", res.data.user_id);
-      localStorage.setItem("user_name", res.data.name);
-      localStorage.setItem("role", res.data.role);
-      window.location.href = res.data.role === "teacher" ? "/teacher.html" : "/student.html";
-    } else {
-      showMessage("loginMsg", res.message || "❌ Đăng nhập thất bại", false);
-    }
-  };
-}
-
-// 📚 Xem lớp đã đăng ký (student.html)
+// 📚 Lớp đã đăng ký (student.html)
 window.viewRegisteredClasses = async function () {
   const { user_id } = getCurrentUser();
   const res = await fetch(`/get_student_classes?user_id=${user_id}`);
@@ -183,7 +195,7 @@ window.viewRegisteredClasses = async function () {
   }
 };
 
-// 🕒 Xem lịch sử điểm danh (student.html)
+// 🕒 Lịch sử điểm danh (student.html)
 window.viewAttendanceHistory = async function () {
   const classId = prompt("Nhập mã lớp học phần để xem lịch sử:");
   const { user_id } = getCurrentUser();
@@ -205,7 +217,7 @@ window.viewAttendanceHistory = async function () {
   }
 };
 
-// ❌ Huỷ đăng ký lớp học phần
+// ❌ Huỷ đăng ký lớp
 window.unenrollClass = async function (classId) {
   const { user_id } = getCurrentUser();
   if (!confirm(`Bạn có chắc chắn muốn huỷ đăng ký lớp ${classId}?`)) return;
