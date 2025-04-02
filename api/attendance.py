@@ -26,7 +26,11 @@ def extract_embedding_from_base64(image_base64):
     cv2.imwrite(temp_image_path, rgb_frame)
 
     try:
-        embedding = DeepFace.represent(img_path=temp_image_path, model_name="Facenet")[0]["embedding"]
+        embedding = DeepFace.represent(
+            img_path=temp_image_path,
+            model_name="Facenet",
+            enforce_detection=False  # ✅ Cho phép xử lý ảnh dù không detect được mặt
+        )[0]["embedding"]
         return np.array(embedding, dtype=np.float32)
     finally:
         os.remove(temp_image_path)
