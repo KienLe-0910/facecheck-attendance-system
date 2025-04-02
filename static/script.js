@@ -16,7 +16,7 @@ window.showMessage = function (id, message, success = true) {
 };
 
 // ✅ Gửi POST JSON đúng chuẩn REST API
-const postJSON = async (url, data) => {
+window.postJSON = async (url, data) => {
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -27,23 +27,83 @@ const postJSON = async (url, data) => {
   return res.json();
 };
 
-// 📝 Đăng ký người dùng (dành cho register.html)
+// ✅ Đăng xuất
+window.logout = function () {
+  localStorage.clear();
+  window.location.href = "/login.html";
+};
+
+// ✅ Hàm dùng chung: khởi tạo camera + overlay oval
+window.initCameraWithOverlay = async function (videoId, overlayId) {
+  const video = document.getElementById(videoId);
+  const overlay = document.getElementById(overlayId);
+
+  if (!video || !overlay) return;
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+  } catch (err) {
+    console.error("🚫 Không thể truy cập webcam:", err);
+    return;
+  }
+
+  const ctx = overlay.getContext("2d");
+
+  function drawOval() {
+    if (video.readyState >= 2) {
+      overlay.width = video.videoWidth;
+      overlay.height = video.videoHeight;
+
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      const radiusX = overlay.width / 5;
+      const radiusY = overlay.height / 3;
+
+      ctx.beginPath();
+      ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
+      ctx.strokeStyle = "lime";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+    requestAnimationFrame(drawOval);
+  }
+
+  drawOval();
+};
+
+// ✅ Hàm dùng chung: chụp ảnh từ camera
+window.captureImageFromVideo = function (videoId) {
+  const video = document.getElementById(videoId);
+  if (!video || video.readyState < 2) return null;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0);
+  return canvas.toDataURL("image/jpeg");
+};
+
+// 📝 Đăng ký thông tin người dùng (dùng trong register.html)
 const infoForm = document.getElementById("infoForm");
 if (infoForm) {
   infoForm.onsubmit = async (e) => {
     e.preventDefault();
-    const student_id = document.getElementById("student_id").value.trim();
+    const user_id = document.getElementById("student_id").value.trim();
     const name = document.getElementById("name").value.trim();
     const password = document.getElementById("password").value;
     const role = document.getElementById("role").value;
 
-    if (!student_id || !name || !password) {
+    if (!user_id || !name || !password) {
       showMessage("infoMsg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
       return;
     }
 
     const result = await postJSON("/register_info", {
-      student_id,
+      user_id,
       name,
       password,
       role
@@ -53,44 +113,27 @@ if (infoForm) {
   };
 }
 
-// 📸 Xử lý chụp ảnh webcam và gửi lên (dành cho register.html)
-const video = document.getElementById("camera");
+// 📸 Gửi ảnh khuôn mặt khi đăng ký (dùng trong register.html)
 const captureFace = document.getElementById("captureFace");
-
-if (video && captureFace) {
-  navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-    video.srcObject = stream;
-  }).catch(err => {
-    showMessage("faceMsg", "🚫 Không thể truy cập webcam.", false);
-    console.error(err);
-  });
-
+if (captureFace) {
   captureFace.onclick = async () => {
-    const student_id = document.getElementById("student_id").value.trim();
-    if (!student_id) {
+    const user_id = document.getElementById("student_id").value.trim();
+    if (!user_id) {
       showMessage("faceMsg", "⚠ Vui lòng nhập mã người dùng trước.", false);
       return;
     }
 
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
-
-    const imageBase64 = canvas.toDataURL("image/jpeg");
+    const imageBase64 = captureImageFromVideo("camera");
+    if (!imageBase64) {
+      showMessage("faceMsg", "⚠ Chưa sẵn sàng chụp ảnh!", false);
+      return;
+    }
 
     const result = await postJSON("/upload_face", {
-      student_id,
+      user_id,
       image_data: imageBase64
     });
 
     showMessage("faceMsg", result.message, result.success !== false);
   };
 }
-
-// ✅ Hàm đăng xuất chung cho mọi trang
-window.logout = function () {
-  localStorage.clear();
-  window.location.href = "/login.html";
-};
