@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Điểm danh khuôn mặt</title>
   <link rel="stylesheet" href="/static/style.css">
-  <!-- ✅ Face API bản UMD dành cho trình duyệt -->
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
   <script src="/static/script.js" defer></script>
 </head>
@@ -39,48 +38,18 @@
       }
 
       let imageData = "";
-      const video = document.getElementById("video");
-      const canvas = document.getElementById("overlay");
-      const ctx = canvas.getContext("2d");
 
-      // ✅ Load model từ /models (đã được mount trong FastAPI)
-      await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
+      // ✅ Bắt đầu camera và overlay bounding box
+      await startFaceDetectionOverlay("video", "overlay");
 
-      // ✅ Mở camera
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      video.srcObject = stream;
-
-      video.addEventListener("play", () => {
-        const drawLoop = async () => {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-
-          const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          faceapi.draw.drawDetections(canvas, detections);
-
-          requestAnimationFrame(drawLoop);
-        };
-        drawLoop();
-      });
-
-      // ✅ Chụp và crop khuôn mặt
+      // ✅ Chụp ảnh khuôn mặt khi bấm nút
       document.getElementById("captureBtn").onclick = async () => {
-        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
-        if (!detection) {
+        const result = await captureFaceFromVideo("video");
+        if (!result) {
           showMessage("msg", "⚠️ Không phát hiện được khuôn mặt!", false);
           return;
         }
-
-        const { x, y, width, height } = detection.box;
-
-        const faceCanvas = document.createElement("canvas");
-        faceCanvas.width = width;
-        faceCanvas.height = height;
-        const faceCtx = faceCanvas.getContext("2d");
-        faceCtx.drawImage(video, x, y, width, height, 0, 0, width, height);
-
-        imageData = faceCanvas.toDataURL("image/jpeg");
+        imageData = result;
         showMessage("msg", "✅ Đã chụp khuôn mặt. Bấm xác nhận để gửi.", true);
       };
 
@@ -102,7 +71,7 @@
         showMessage("msg", result.message || result.detail, result.success !== false);
       };
 
-      // ✅ Tải phiên điểm danh từ backend
+      // ✅ Tải phiên điểm danh
       const res = await fetch(`/get_available_sessions?user_id=${user_id}`);
       const result = await res.json();
       const select = document.getElementById("session_id");
