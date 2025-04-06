@@ -3,34 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <title>Đăng ký người dùng</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script defer src="/static/script.js"></script>
 </head>
 <body>
   <div class="container">
-    <h2>📝 Đăng ký tài khoản</h2>
+    <h2>📝 Đăng ký người dùng mới</h2>
 
+    <!-- Form nhập thông tin -->
     <form id="infoForm">
-      <input type="text" id="student_id" placeholder="Mã người dùng" required><br>
-      <input type="text" id="name" placeholder="Họ và tên" required><br>
-      <input type="password" id="password" placeholder="Mật khẩu" required><br>
-      <select id="role">
+      <input type="text" id="student_id" name="student_id" placeholder="Mã người dùng" required />
+      <input type="text" id="name" name="name" placeholder="Họ và tên" required />
+      <input type="password" id="password" name="password" placeholder="Mật khẩu" required />
+      <select id="role" name="role">
         <option value="student">Sinh viên</option>
         <option value="teacher">Giảng viên</option>
-      </select><br><br>
+      </select>
       <button type="submit">Lưu thông tin</button>
     </form>
-    <p id="infoMsg"></p>
 
-    <hr>
+    <p id="infoMsg" style="margin-top: 1rem;"></p>
 
-    <h3>📸 Chụp và lưu khuôn mặt</h3>
-    <video id="camera" autoplay width="300" height="225"></video><br>
-    <button id="captureFace">Chụp và lưu khuôn mặt</button>
-    <p id="faceMsg"></p>
+    <!-- Camera và chụp khuôn mặt -->
+    <h3 style="margin-top: 2rem;">📸 Chụp ảnh khuôn mặt</h3>
+    <div style="position: relative; display: inline-block;">
+      <video id="camera" autoplay muted playsinline style="border-radius: 10px;"></video>
+      <canvas id="overlay" style="position:absolute; top:0; left:0;"></canvas>
+    </div>
+    <br>
+    <button id="captureFace">📷 Chụp & gửi khuôn mặt</button>
+    <p id="faceMsg" style="margin-top: 1rem;"></p>
 
-    <br><a href="/login.html">← Quay lại trang đăng nhập</a>
+    <button style="margin-top: 2rem;" onclick="window.location.href='/login.html'">⬅️ Quay lại đăng nhập</button>
   </div>
 
-  <script src="/static/script.js"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", async () => {
+      try {
+        await startFaceDetectionOverlay("camera", "overlay");
+        console.log("[INFO] ✅ Camera + face detection đã sẵn sàng.");
+      } catch (err) {
+        console.error("[ERROR] Lỗi bật camera:", err);
+        showMessage("faceMsg", "🚫 Không thể truy cập webcam.", false);
+      }
+
+      const captureBtn = document.getElementById("captureFace");
+      captureBtn.onclick = async () => {
+        const user_id = document.getElementById("student_id").value.trim();
+        if (!user_id) {
+          showMessage("faceMsg", "⚠ Vui lòng nhập mã người dùng trước.", false);
+          return;
+        }
+
+        const imageBase64 = await captureFaceFromVideo("camera");
+        if (!imageBase64) {
+          showMessage("faceMsg", "⚠ Không phát hiện được khuôn mặt!", false);
+          return;
+        }
+
+        const result = await postJSON("/upload_face", {
+          student_id: user_id,
+          image_data: imageBase64
+        });
+
+        showMessage("faceMsg", result.message, result.success !== false);
+      };
+    });
+  </script>
 </body>
 </html>
