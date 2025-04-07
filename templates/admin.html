@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Quản trị hệ thống - Tạo giảng viên</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>👩‍💼 Xin chào, <span id="admin-name">Admin</span></h1>
+  <h2>➕ Tạo tài khoản giảng viên</h2>
+
+  <form id="create-teacher-form">
+    <label for="user_id">Mã giảng viên:</label><br>
+    <input type="text" id="user_id" name="user_id" required><br><br>
+
+    <label for="name">Họ tên:</label><br>
+    <input type="text" id="name" name="name" required><br><br>
+
+    <label for="password">Mật khẩu:</label><br>
+    <input type="password" id="password" name="password" required><br><br>
+
+    <button type="submit">Tạo tài khoản</button>
+  </form>
+
+  <p id="message" style="margin-top: 20px; font-weight: bold;"></p>
+
+  <br>
+  <button id="logout-btn">Đăng xuất</button>
+
+  <script src="script.js"></script>
+</body>
+</html>
