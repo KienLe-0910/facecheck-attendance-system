@@ -21,7 +21,7 @@ def init_db():
             user_id TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
             name TEXT NOT NULL,
-            role TEXT CHECK(role IN ('student', 'teacher')) NOT NULL DEFAULT 'student',
+            role TEXT CHECK(role IN ('student', 'teacher', 'admin')) NOT NULL DEFAULT 'student',
             embedding BLOB,
             created_at TEXT DEFAULT (DATETIME('now', 'localtime'))
         )''')
@@ -31,7 +31,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             class_id TEXT UNIQUE NOT NULL,
             class_name TEXT NOT NULL,
-            teacher_id TEXT NOT NULL,
+            admin_id TEXT NOT NULL,
             created_at TEXT
         )''')
 
@@ -79,18 +79,18 @@ def create_admin_account():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    teacher_id = "admin"
-    teacher_name = "Giảng viên Admin"
-    password = "admin123"
+    admin_id = "admin1"
+    admin_name = "Admin_1"
+    password = "codeadmin1"
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
     try:
-        cursor.execute("SELECT * FROM users WHERE user_id = ?", (teacher_id,))
+        cursor.execute("SELECT * FROM users WHERE user_id = ?", (admin_id,))
         if not cursor.fetchone():
             cursor.execute("INSERT INTO users (user_id, password, name, role, created_at) VALUES (?, ?, ?, ?, ?)",
-                           (teacher_id, hashed_password, teacher_name, "teacher", get_current_time()))
+                           (admin_id, hashed_password, admin_name, "admin", get_current_time()))
             conn.commit()
-            print("[INFO] Admin account created: admin / admin123")
+            print("[INFO] Admin account created: admin1 / codeadmin1")
     except Exception as e:
         print(f"[ERROR] Failed to create admin account: {e}")
     finally:
