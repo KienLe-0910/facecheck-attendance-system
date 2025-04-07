@@ -6,27 +6,29 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>👨‍💼 Xin chào, <span id="admin-name">Admin</span></h1>
+  <div class="container">
+    <h1>👨‍💼 Xin chào, <span id="admin-name">Admin</span></h1>
 
-  <section>
-    <h2>➕ Tạo tài khoản giảng viên</h2>
-    <form id="create-teacher-form">
-      <label for="user_id">Mã giảng viên:</label><br />
-      <input type="text" id="user_id" required /><br /><br />
+    <section>
+      <h2>➕ Tạo tài khoản giảng viên</h2>
+      <form id="create-teacher-form">
+        <label for="user_id">Mã giảng viên:</label><br />
+        <input type="text" id="user_id" required /><br /><br />
 
-      <label for="name">Họ tên:</label><br />
-      <input type="text" id="name" required /><br /><br />
+        <label for="name">Họ tên:</label><br />
+        <input type="text" id="name" required /><br /><br />
 
-      <label for="password">Mật khẩu:</label><br />
-      <input type="password" id="password" required /><br /><br />
+        <label for="password">Mật khẩu:</label><br />
+        <input type="password" id="password" required /><br /><br />
 
-      <button type="submit">Tạo tài khoản</button>
-    </form>
+        <button type="submit">Tạo tài khoản</button>
+      </form>
 
-    <p id="message" style="margin-top: 20px; font-weight: bold;"></p>
-  </section>
+      <p id="message" style="margin-top: 20px; font-weight: bold;"></p>
+    </section>
 
-  <button id="logout-btn" style="margin-top: 30px;">🚪 Đăng xuất</button>
+    <button id="logout-btn" style="margin-top: 30px;">🚪 Đăng xuất</button>
+  </div>
 
   <script src="script.js"></script>
 </body>
