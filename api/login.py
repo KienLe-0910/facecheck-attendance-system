@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
-from models.db import get_db_connection  # ✅ Sử dụng hàm chuẩn
+from models.db import get_db_connection
 import bcrypt
 
 router = APIRouter()
@@ -10,9 +10,9 @@ class LoginRequest(BaseModel):
     password: str
 
 @router.post("/login")
-def login(request: LoginRequest):
-    user_id = request.user_id.strip()
-    password = request.password.strip()
+def login(request_data: LoginRequest, request: Request):
+    user_id = request_data.user_id.strip()
+    password = request_data.password.strip()
 
     if not user_id or not password:
         raise HTTPException(status_code=400, detail="⚠ Mã người dùng và mật khẩu không được để trống!")
@@ -29,6 +29,13 @@ def login(request: LoginRequest):
 
     if not bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
         raise HTTPException(status_code=401, detail="⚠ Mật khẩu không chính xác!")
+
+    # ✅ Lưu thông tin user vào session
+    request.session["user"] = {
+        "user_id": user_id,
+        "name": user["name"],
+        "role": user["role"]
+    }
 
     return {
         "success": True,
