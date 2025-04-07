@@ -1,4 +1,7 @@
-// ✅ Lấy thông tin người dùng từ localStorage
+// =============================
+// ✅ Các hàm tiện ích dùng chung (global)
+// =============================
+
 window.getCurrentUser = function () {
   return {
     user_id: localStorage.getItem("user_id"),
@@ -7,7 +10,6 @@ window.getCurrentUser = function () {
   };
 };
 
-// ✅ Hiển thị thông báo ra thẻ <p id=...>
 window.showMessage = function (id, message, success = true) {
   const p = document.getElementById(id);
   if (!p) return;
@@ -15,7 +17,6 @@ window.showMessage = function (id, message, success = true) {
   p.style.color = success ? "green" : "red";
 };
 
-// ✅ Gửi POST JSON đúng chuẩn REST API
 window.postJSON = async (url, data) => {
   const res = await fetch(url, {
     method: "POST",
@@ -25,50 +26,11 @@ window.postJSON = async (url, data) => {
   return res.json();
 };
 
-// ✅ Đăng xuất
 window.logout = function () {
   localStorage.clear();
   window.location.href = "/login.html";
 };
 
-// ✅ Đăng nhập (login.html) – Đã sửa lỗi `user_id` undefined
-const loginForm = document.getElementById("loginForm");
-if (loginForm) {
-  loginForm.onsubmit = async (e) => {
-    e.preventDefault();
-
-    const user_id = document.getElementById("user_id").value.trim();
-    const password = document.getElementById("password").value;
-
-    if (!user_id || !password) {
-      showMessage("loginMsg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
-      return;
-    }
-
-    try {
-      const res = await postJSON("/login", { user_id, password });
-
-      if (res.success) {
-        // ✅ Lưu thông tin vào localStorage
-        localStorage.setItem("user_id", res.user_id);
-        localStorage.setItem("user_name", res.user_name);
-        localStorage.setItem("role", res.role);
-
-        // ✅ Thông báo & chuyển trang
-        showMessage("loginMsg", res.message || "✅ Đăng nhập thành công!", true);
-        const dashboard = res.role === "teacher" ? "/teacher.html" : "/student.html";
-        setTimeout(() => window.location.href = dashboard, 1000);
-      } else {
-        showMessage("loginMsg", res.message || "❌ Đăng nhập thất bại!", false);
-      }
-    } catch (err) {
-      showMessage("loginMsg", "❌ Lỗi kết nối đến server!", false);
-      console.error(err);
-    }
-  };
-}
-
-// ✅ Bật camera + vẽ bounding box (dùng cho attendance, register)
 window.startFaceDetectionOverlay = async function (videoId, canvasId) {
   await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
 
@@ -104,7 +66,6 @@ window.startFaceDetectionOverlay = async function (videoId, canvasId) {
   });
 };
 
-// ✅ Chụp ảnh từ video – chỉ vùng mặt
 window.captureFaceFromVideo = async function (videoId) {
   const video = document.getElementById(videoId);
   const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
@@ -120,23 +81,124 @@ window.captureFaceFromVideo = async function (videoId) {
   return canvas.toDataURL("image/jpeg");
 };
 
-// ✅ Đăng ký người dùng (register.html)
+window.viewRegisteredClasses = async function () {
+  const { user_id } = getCurrentUser();
+  const res = await fetch(`/get_student_classes?user_id=${user_id}`);
+  const result = await res.json();
+  const area = document.getElementById("infoArea");
+
+  if (result.success) {
+    if (result.data.length === 0) {
+      area.innerHTML = "<p>Bạn chưa đăng ký lớp học phần nào.</p>";
+    } else {
+      const html = result.data.map(cls => `
+        <div>
+          <strong>${cls.class_id}</strong> - ${cls.class_name}
+          <button onclick="unenrollClass('${cls.class_id}')">❌ Huỷ</button>
+        </div>
+      `).join("");
+      area.innerHTML = `<h3>📚 Lớp đã đăng ký:</h3>` + html;
+    }
+  } else {
+    area.innerHTML = `<p style="color:red;">${result.message}</p>`;
+  }
+};
+
+window.viewAttendanceHistory = async function () {
+  const classId = prompt("Nhập mã lớp học phần để xem lịch sử:");
+  const { user_id } = getCurrentUser();
+  if (!classId) return;
+
+  const res = await fetch(`/student_attendance_history?user_id=${user_id}&class_id=${classId}`);
+  const result = await res.json();
+  const area = document.getElementById("infoArea");
+
+  if (result.success) {
+    if (result.data.length === 0) {
+      area.innerHTML = `<p>Chưa có lịch sử điểm danh trong lớp <strong>${classId}</strong>.</p>`;
+    } else {
+      const html = result.data.map(r => `<li>🕓 <strong>${r.timestamp}</strong> — <em>${r.status}</em></li>`).join("");
+      area.innerHTML = `<h3>🕒 Lịch sử điểm danh lớp <strong>${classId}</strong>:</h3><ul>${html}</ul>`;
+    }
+  } else {
+    area.innerHTML = `<p style="color:red;">${result.message}</p>`;
+  }
+};
+
+window.unenrollClass = async function (classId) {
+  const { user_id } = getCurrentUser();
+  if (!confirm(`Bạn có chắc chắn muốn huỷ đăng ký lớp ${classId}?`)) return;
+
+  const res = await fetch(`/unenroll_class?user_id=${user_id}&class_id=${classId}`, {
+    method: "DELETE"
+  });
+
+  const result = await res.json();
+  alert(result.message);
+  if (result.success) viewRegisteredClasses();
+};
+
+
+// =============================
+// ✅ Xử lý logic theo từng trang cụ thể
+// =============================
+
+// Login
+const loginForm = document.getElementById("loginForm");
+if (loginForm) {
+  loginForm.onsubmit = async (e) => {
+    e.preventDefault();
+
+    const user_id = document.getElementById("user_id").value.trim();
+    const password = document.getElementById("password").value;
+
+    if (!user_id || !password) {
+      showMessage("loginMsg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
+      return;
+    }
+
+    try {
+      const res = await postJSON("/login", { user_id, password });
+
+      if (res.success) {
+        localStorage.setItem("user_id", res.user_id);
+        localStorage.setItem("user_name", res.user_name);
+        localStorage.setItem("role", res.role);
+
+        showMessage("loginMsg", res.message || "✅ Đăng nhập thành công!", true);
+        const dashboard = res.role === "teacher"
+          ? "/teacher.html"
+          : res.role === "admin"
+          ? "/admin.html"
+          : "/student.html";
+        setTimeout(() => window.location.href = dashboard, 1000);
+      } else {
+        showMessage("loginMsg", res.message || "❌ Đăng nhập thất bại!", false);
+      }
+    } catch (err) {
+      showMessage("loginMsg", "❌ Lỗi kết nối đến server!", false);
+      console.error(err);
+    }
+  };
+}
+
+// Register
 const infoForm = document.getElementById("infoForm");
 if (infoForm) {
   infoForm.onsubmit = async (e) => {
     e.preventDefault();
-    const user_id = document.getElementById("student_id").value.trim();
+    const student_id = document.getElementById("student_id").value.trim();
     const name = document.getElementById("name").value.trim();
     const password = document.getElementById("password").value;
-    const role = document.getElementById("role").value;
+    const role = "student";
 
-    if (!user_id || !name || !password) {
+    if (!student_id || !name || !password) {
       showMessage("infoMsg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
       return;
     }
 
     const result = await postJSON("/register_info", {
-      user_id,
+      student_id,
       name,
       password,
       role
@@ -146,7 +208,6 @@ if (infoForm) {
   };
 }
 
-// 📸 Gửi ảnh khuôn mặt khi đăng ký
 const captureBtn = document.getElementById("captureFace");
 if (captureBtn) {
   captureBtn.onclick = async () => {
@@ -171,62 +232,33 @@ if (captureBtn) {
   };
 }
 
-// 📚 Lớp đã đăng ký (student.html)
-window.viewRegisteredClasses = async function () {
-  const { user_id } = getCurrentUser();
-  const res = await fetch(`/get_student_classes?user_id=${user_id}`);
-  const result = await res.json();
-  const area = document.getElementById("infoArea");
-
-  if (result.success) {
-    if (result.data.length === 0) {
-      area.innerHTML = "<p>Bạn chưa đăng ký lớp học phần nào.</p>";
-    } else {
-      const html = result.data.map(cls => `
-        <div>
-          <strong>${cls.class_id}</strong> - ${cls.class_name}
-          <button onclick="unenrollClass('${cls.class_id}')">❌ Huỷ</button>
-        </div>
-      `).join("");
-      area.innerHTML = `<h3>📚 Lớp đã đăng ký:</h3>` + html;
-    }
-  } else {
-    area.innerHTML = `<p style="color:red;">${result.message}</p>`;
+// Admin
+const teacherForm = document.getElementById("create-teacher-form");
+if (teacherForm) {
+  const { user_name, role } = getCurrentUser();
+  if (role !== "admin") {
+    window.location.href = "/login.html";
   }
-};
 
-// 🕒 Lịch sử điểm danh (student.html)
-window.viewAttendanceHistory = async function () {
-  const classId = prompt("Nhập mã lớp học phần để xem lịch sử:");
-  const { user_id } = getCurrentUser();
-  if (!classId) return;
+  document.getElementById("admin-name").textContent = user_name || "Admin";
 
-  const res = await fetch(`/student_attendance_history?user_id=${user_id}&class_id=${classId}`);
-  const result = await res.json();
-  const area = document.getElementById("infoArea");
+  teacherForm.onsubmit = async (e) => {
+    e.preventDefault();
 
-  if (result.success) {
-    if (result.data.length === 0) {
-      area.innerHTML = `<p>Chưa có lịch sử điểm danh trong lớp <strong>${classId}</strong>.</p>`;
-    } else {
-      const html = result.data.map(r => `<li>🕓 <strong>${r.timestamp}</strong> — <em>${r.status}</em></li>`).join("");
-      area.innerHTML = `<h3>🕒 Lịch sử điểm danh lớp <strong>${classId}</strong>:</h3><ul>${html}</ul>`;
+    const user_id = document.getElementById("user_id").value.trim();
+    const name = document.getElementById("name").value.trim();
+    const password = document.getElementById("password").value;
+
+    if (!user_id || !name || !password) {
+      showMessage("message", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
+      return;
     }
-  } else {
-    area.innerHTML = `<p style="color:red;">${result.message}</p>`;
-  }
-};
 
-// ❌ Huỷ đăng ký lớp
-window.unenrollClass = async function (classId) {
-  const { user_id } = getCurrentUser();
-  if (!confirm(`Bạn có chắc chắn muốn huỷ đăng ký lớp ${classId}?`)) return;
+    const res = await postJSON("/admin/create_teacher", { user_id, name, password });
+    showMessage("message", res.message || res.detail, res.success !== false);
+    if (res.success) teacherForm.reset();
+  };
 
-  const res = await fetch(`/unenroll_class?user_id=${user_id}&class_id=${classId}`, {
-    method: "DELETE"
-  });
-
-  const result = await res.json();
-  alert(result.message);
-  if (result.success) viewRegisteredClasses();
-};
+  const logoutBtn = document.getElementById("logout-btn");
+  if (logoutBtn) logoutBtn.onclick = logout;
+}
