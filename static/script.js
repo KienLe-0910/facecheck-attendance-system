@@ -310,3 +310,18 @@ window.viewClassesOfTeacher = async function (teacher_id) {
   `).join("");
   container.innerHTML = html;
 };
+
+window.addEventListener("DOMContentLoaded", async () => {
+  const video = document.getElementById("camera");
+  const canvas = document.getElementById("overlay");
+
+  if (video && canvas) {
+    try {
+      await startFaceDetectionOverlay("camera", "overlay");
+      console.log("[INFO] ✅ Camera đã sẵn sàng.");
+    } catch (err) {
+      console.error("[ERROR] Lỗi bật camera:", err);
+      showMessage("faceMsg", "🚫 Không thể truy cập webcam.", false);
+    }
+  }
+});
