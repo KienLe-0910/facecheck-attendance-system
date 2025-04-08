@@ -138,12 +138,9 @@ window.unenrollClass = async function (classId) {
   if (result.success) viewRegisteredClasses();
 };
 
-
 // =============================
-// ✅ Xử lý logic theo từng trang cụ thể
+// ✅ Xử lý login
 // =============================
-
-// Login
 const loginForm = document.getElementById("loginForm");
 if (loginForm) {
   loginForm.onsubmit = async (e) => {
@@ -182,29 +179,11 @@ if (loginForm) {
   };
 }
 
-// Register
-const infoForm = document.getElementById("infoForm");
-if (infoForm) {
-  infoForm.onsubmit = async (e) => {
-    e.preventDefault();
-    const student_id = document.getElementById("student_id").value.trim();
-    const name = document.getElementById("name").value.trim();
-    const password = document.getElementById("password").value;
+// =============================
+// ✅ Đăng ký tài khoản (register.html)
+// =============================
 
-    if (!student_id || !name || !password) {
-      showMessage("infoMsg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
-      return;
-    }
-
-    const result = await postJSON("/register_info", {
-      student_id,
-      name,
-      password
-    });
-
-    showMessage("infoMsg", result.message, result.success !== false);
-  };
-}
+window._faceCapturedImage = null;
 
 const captureBtn = document.getElementById("captureFace");
 if (captureBtn) {
@@ -221,25 +200,76 @@ if (captureBtn) {
       return;
     }
 
-    const result = await postJSON("/upload_face", {
-      student_id: user_id,
-      image_data: imageBase64
-    });
+    // Hiển thị preview
+    window._faceCapturedImage = imageBase64;
+    const img = document.getElementById("previewImage");
+    const preview = document.getElementById("facePreview");
 
-    showMessage("faceMsg", result.message, result.success !== false);
+    img.src = imageBase64;
+    img.style.display = "block";
+    preview.style.display = "block";
 
-    // ✅ Hiển thị ảnh vừa gửi (sau khi thành công)
-    if (result.success) {
-      const img = document.getElementById("previewImage");
-      if (img) {
-        img.src = imageBase64;
-        img.style.display = "block";
+    showMessage("faceMsg", "✅ Đã chụp ảnh, vui lòng xác nhận hoặc chụp lại.", true);
+  };
+}
+
+const retakeBtn = document.getElementById("retakeFace");
+if (retakeBtn) {
+  retakeBtn.onclick = () => {
+    const img = document.getElementById("previewImage");
+    const preview = document.getElementById("facePreview");
+
+    img.src = "";
+    img.style.display = "none";
+    preview.style.display = "none";
+    window._faceCapturedImage = null;
+
+    showMessage("faceMsg", "📸 Mời bạn chụp lại khuôn mặt.", true);
+  };
+}
+
+const finalBtn = document.getElementById("finalRegisterBtn");
+if (finalBtn) {
+  finalBtn.onclick = async () => {
+    const student_id = document.getElementById("student_id").value.trim();
+    const name = document.getElementById("name").value.trim();
+    const password = document.getElementById("password").value;
+    const imageBase64 = window._faceCapturedImage;
+
+    if (!student_id || !name || !password) {
+      showMessage("infoMsg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
+      return;
+    }
+
+    if (!imageBase64) {
+      showMessage("faceMsg", "⚠ Bạn chưa chụp ảnh khuôn mặt!", false);
+      return;
+    }
+
+    try {
+      const res1 = await postJSON("/register_info", { student_id, name, password });
+      const res2 = await postJSON("/upload_face", { student_id, image_data: imageBase64 });
+
+      if (res1.success && res2.success) {
+        showMessage("infoMsg", "✅ Đăng ký thành công!", true);
+        showMessage("faceMsg", "✅ Khuôn mặt đã được lưu!", true);
+        
+        document.getElementById("infoMsg").scrollIntoView({ behavior: "smooth" });
+      } else {
+        showMessage("infoMsg", res1.message || res1.detail || "❌ Lỗi thông tin", false);
+        showMessage("faceMsg", res2.message || res2.detail || "❌ Lỗi ảnh", false);
       }
+    } catch (err) {
+      showMessage("infoMsg", "❌ Lỗi kết nối server", false);
+      console.error(err);
     }
   };
 }
 
-// Admin
+
+// =============================
+// ✅ Quản lý admin (admin.html)
+// =============================
 const teacherForm = document.getElementById("create-teacher-form");
 if (teacherForm) {
   const { user_name, role } = getCurrentUser();
@@ -265,7 +295,7 @@ if (teacherForm) {
     showMessage("message", res.message || res.detail, res.success !== false);
     if (res.success) teacherForm.reset();
   };
-  
+
   const logoutBtn = document.getElementById("logout-btn");
   if (logoutBtn) logoutBtn.onclick = logout;
 }
@@ -284,7 +314,6 @@ if (loadBtn) {
       return;
     }
 
-    // Render danh sách giảng viên
     const html = data.data.map(teacher => `
       <div style="margin-bottom: 10px;">
         <strong>${teacher.name}</strong> (${teacher.user_id}) - ${teacher.created_at}
@@ -297,7 +326,6 @@ if (loadBtn) {
   };
 }
 
-// ✅ Hàm xem lớp học phần của 1 giảng viên
 window.viewClassesOfTeacher = async function (teacher_id) {
   const container = document.getElementById(`classes-${teacher_id}`);
   if (!container) return;
@@ -318,7 +346,9 @@ window.viewClassesOfTeacher = async function (teacher_id) {
   container.innerHTML = html;
 };
 
-// ✅ Tự động bật camera nếu có phần tử "camera" và "overlay" trong trang
+// =============================
+// ✅ Tự động bật camera nếu có
+// =============================
 window.addEventListener("DOMContentLoaded", async () => {
   const video = document.getElementById("camera");
   const canvas = document.getElementById("overlay");
