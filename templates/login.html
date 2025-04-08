@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Đăng nhập</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css" />
   <script src="/static/script.js" defer></script>
 </head>
 <body>
@@ -11,57 +11,15 @@
     <h2>🔐 Đăng nhập hệ thống</h2>
 
     <form id="loginForm">
-      <input type="text" name="user_id" placeholder="Mã người dùng" required>
-      <input type="password" name="password" placeholder="Mật khẩu" required>
+      <input type="text" id="user_id" name="user_id" placeholder="Mã người dùng" required />
+      <input type="password" id="password" name="password" placeholder="Mật khẩu" required />
       <button type="submit">Đăng nhập</button>
     </form>
 
-    <p id="msg"></p>
+    <p id="loginMsg" style="margin-top: 1rem;"></p>
 
-    <br>
-    <a href="/register.html">📝 Chưa có tài khoản? Đăng ký tại đây</a><br>
-    <a href="/index.html">← Quay về trang chủ</a>
+    <br />
+    <a href="/register.html">📝 Chưa có tài khoản? Đăng ký tại đây</a>
   </div>
-
-  <script>
-    const loginForm = document.getElementById("loginForm");
-
-    loginForm.onsubmit = async (e) => {
-      e.preventDefault();
-
-      try {
-        const result = await postJSON("/login", {
-          user_id: loginForm.user_id.value.trim(),
-          password: loginForm.password.value
-        });
-
-        if (result.success) {
-          // ✅ Lưu thông tin người dùng
-          localStorage.setItem("user_id", result.user_id);
-          localStorage.setItem("user_name", result.user_name);
-          localStorage.setItem("role", result.role);
-
-          // 🧹 Xoá thông tin cũ nếu có
-          localStorage.removeItem("student_id");
-          localStorage.removeItem("student_name");
-
-          // ✅ Chuyển trang theo vai trò
-          const dashboard = result.role === "teacher"
-            ? "/teacher.html"
-            : "/student.html";
-
-          showMessage("msg", result.message, true);
-          setTimeout(() => {
-            window.location.href = dashboard;
-          }, 1000);
-        } else {
-          showMessage("msg", result.message || result.detail, false);
-        }
-      } catch (err) {
-        showMessage("msg", "❌ Lỗi kết nối đến server", false);
-        console.error(err);
-      }
-    };
-  </script>
 </body>
 </html>
