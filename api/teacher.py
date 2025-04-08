@@ -140,11 +140,11 @@ def get_attendance_list_by_session(session_id: int):
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            SELECT a.user_id, u.name, a.timestamp, a.status
+            SELECT a.user_id, u.name, a.created_at, a.status
             FROM attendance a
             JOIN users u ON a.user_id = u.user_id
             WHERE a.session_id = ?
-            ORDER BY a.timestamp ASC
+            ORDER BY a.created_at ASC
         """, (session_id,))
         records = cursor.fetchall()
         data = [dict(row) for row in records]
