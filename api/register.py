@@ -21,7 +21,7 @@ class RegisterInfoRequest(BaseModel):
     student_id: str
     name: str
     password: str
-    role: str
+    role: str = "student"
 
 @router.post("/register_info")
 def register_info(request: RegisterInfoRequest):
