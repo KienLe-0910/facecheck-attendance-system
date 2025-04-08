@@ -20,27 +20,27 @@ def login(request_data: LoginRequest, request: Request):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT name, password, role FROM users WHERE user_id = ?", (user_id,))
-    user = cursor.fetchone()
-    conn.close()
+    try:
+        cursor.execute("SELECT name, password, role FROM users WHERE user_id = ?", (user_id,))
+        user = cursor.fetchone()
 
-    if not user:
-        raise HTTPException(status_code=404, detail="⚠ Người dùng không tồn tại!")
+        if not user:
+            raise HTTPException(status_code=404, detail="⚠ Người dùng không tồn tại!")
 
-    if not bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
-        raise HTTPException(status_code=401, detail="⚠ Mật khẩu không chính xác!")
+        if not bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
+            raise HTTPException(status_code=401, detail="⚠ Mật khẩu không chính xác!")
 
-    # ✅ Lưu thông tin user vào session
-    request.session["user"] = {
-        "user_id": user_id,
-        "name": user["name"],
-        "role": user["role"]
-    }
+        # ✅ Trả về thông tin để frontend lưu vào localStorage
+        return {
+            "success": True,
+            "message": "✅ Đăng nhập thành công!",
+            "user_id": user_id,
+            "user_name": user["name"],
+            "role": user["role"]
+        }
 
-    return {
-        "success": True,
-        "message": "✅ Đăng nhập thành công!",
-        "user_id": user_id,
-        "user_name": user["name"],
-        "role": user["role"]
-    }
+    except Exception as e:
+        print("🛑 LỖI LOGIN:", e)
+        raise HTTPException(status_code=500, detail="Lỗi hệ thống đăng nhập.")
+    finally:
+        conn.close()
