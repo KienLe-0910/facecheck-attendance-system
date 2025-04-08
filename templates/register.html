@@ -13,13 +13,9 @@
 
     <!-- Form nhập thông tin -->
     <form id="infoForm">
-      <input type="text" id="student_id" name="student_id" placeholder="Mã người dùng" required />
+      <input type="text" id="student_id" name="student_id" placeholder="Mã sinh viên" required />
       <input type="text" id="name" name="name" placeholder="Họ và tên" required />
       <input type="password" id="password" name="password" placeholder="Mật khẩu" required />
-      <select id="role" name="role">
-        <option value="student">Sinh viên</option>
-        <option value="teacher">Giảng viên</option>
-      </select>
       <button type="submit">Lưu thông tin</button>
     </form>
 
@@ -35,41 +31,14 @@
     <button id="captureFace">📷 Chụp & gửi khuôn mặt</button>
     <p id="faceMsg" style="margin-top: 1rem;"></p>
 
+    <!-- Hiển thị ảnh khuôn mặt đã gửi -->
+    <div id="facePreview" style="margin-top: 1rem;">
+      <h4>🖼️ Ảnh khuôn mặt đã gửi:</h4>
+      <img id="previewImage" src="" alt="Chưa có ảnh" style="max-width: 200px; border-radius: 10px; display: none;" />
+    </div>
+
     <button style="margin-top: 2rem;" onclick="window.location.href='/login.html'">⬅️ Quay lại đăng nhập</button>
   </div>
 
-  <script>
-    window.addEventListener("DOMContentLoaded", async () => {
-      try {
-        await startFaceDetectionOverlay("camera", "overlay");
-        console.log("[INFO] ✅ Camera + face detection đã sẵn sàng.");
-      } catch (err) {
-        console.error("[ERROR] Lỗi bật camera:", err);
-        showMessage("faceMsg", "🚫 Không thể truy cập webcam.", false);
-      }
-
-      const captureBtn = document.getElementById("captureFace");
-      captureBtn.onclick = async () => {
-        const user_id = document.getElementById("student_id").value.trim();
-        if (!user_id) {
-          showMessage("faceMsg", "⚠ Vui lòng nhập mã người dùng trước.", false);
-          return;
-        }
-
-        const imageBase64 = await captureFaceFromVideo("camera");
-        if (!imageBase64) {
-          showMessage("faceMsg", "⚠ Không phát hiện được khuôn mặt!", false);
-          return;
-        }
-
-        const result = await postJSON("/upload_face", {
-          student_id: user_id,
-          image_data: imageBase64
-        });
-
-        showMessage("faceMsg", result.message, result.success !== false);
-      };
-    });
-  </script>
 </body>
 </html>
