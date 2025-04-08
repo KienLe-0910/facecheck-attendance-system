@@ -2,13 +2,15 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <title>Trang quản trị - Tạo giảng viên</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Trang quản trị - Tạo và quản lý giảng viên</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="/static/script.js" defer></script>
 </head>
 <body>
   <div class="container">
     <h1>👨‍💼 Xin chào, <span id="admin-name">Admin</span></h1>
 
+    <!-- TẠO TÀI KHOẢN GIẢNG VIÊN -->
     <section>
       <h2>➕ Tạo tài khoản giảng viên</h2>
       <form id="create-teacher-form">
@@ -23,13 +25,20 @@
 
         <button type="submit">Tạo tài khoản</button>
       </form>
-
       <p id="message" style="margin-top: 20px; font-weight: bold;"></p>
     </section>
 
-    <button id="logout-btn" style="margin-top: 30px;">🚪 Đăng xuất</button>
-  </div>
+    <hr><br>
 
-  <script src="script.js"></script>
+    <!-- XEM DANH SÁCH GIẢNG VIÊN -->
+    <section>
+      <h2>📋 Danh sách giảng viên</h2>
+      <button id="load-teachers">🔄 Tải danh sách</button>
+      <div id="teachers-list" style="margin-top: 20px;"></div>
+    </section>
+
+    <br>
+    <button id="logout-btn">🚪 Đăng xuất</button>
+  </div>
 </body>
 </html>
