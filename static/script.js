@@ -258,7 +258,55 @@ if (teacherForm) {
     showMessage("message", res.message || res.detail, res.success !== false);
     if (res.success) teacherForm.reset();
   };
-
+  
   const logoutBtn = document.getElementById("logout-btn");
   if (logoutBtn) logoutBtn.onclick = logout;
 }
+
+const teachersList = document.getElementById("teachers-list");
+const loadBtn = document.getElementById("load-teachers");
+
+if (loadBtn) {
+  loadBtn.onclick = async () => {
+    teachersList.innerHTML = "⏳ Đang tải...";
+    const res = await fetch("/admin/teachers");
+    const data = await res.json();
+
+    if (!data.success || !data.data.length) {
+      teachersList.innerHTML = "<p>⚠ Không có giảng viên nào.</p>";
+      return;
+    }
+
+    // Render danh sách giảng viên
+    const html = data.data.map(teacher => `
+      <div style="margin-bottom: 10px;">
+        <strong>${teacher.name}</strong> (${teacher.user_id}) - ${teacher.created_at}
+        <button onclick="viewClassesOfTeacher('${teacher.user_id}')">📦 Xem lớp</button>
+        <div id="classes-${teacher.user_id}" style="margin-left: 20px;"></div>
+      </div>
+    `).join("");
+
+    teachersList.innerHTML = html;
+  };
+}
+
+// ✅ Hàm xem lớp học phần của 1 giảng viên
+window.viewClassesOfTeacher = async function (teacher_id) {
+  const container = document.getElementById(`classes-${teacher_id}`);
+  if (!container) return;
+
+  container.innerHTML = "⏳ Đang tải lớp...";
+
+  const res = await fetch(`/admin/classes_of_teacher?teacher_id=${teacher_id}`);
+  const data = await res.json();
+
+  if (!data.success || !data.data.length) {
+    container.innerHTML = "<p>Không có lớp học phần nào.</p>";
+    return;
+  }
+
+  const html = data.data.map(cls => `
+    <div>📘 <strong>${cls.class_name}</strong> (${cls.class_id}) - ${cls.created_at}</div>
+  `).join("");
+  container.innerHTML = html;
+};
