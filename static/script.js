@@ -190,7 +190,6 @@ if (infoForm) {
     const student_id = document.getElementById("student_id").value.trim();
     const name = document.getElementById("name").value.trim();
     const password = document.getElementById("password").value;
-    const role = "student";
 
     if (!student_id || !name || !password) {
       showMessage("infoMsg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
@@ -200,8 +199,7 @@ if (infoForm) {
     const result = await postJSON("/register_info", {
       student_id,
       name,
-      password,
-      role
+      password
     });
 
     showMessage("infoMsg", result.message, result.success !== false);
@@ -229,6 +227,15 @@ if (captureBtn) {
     });
 
     showMessage("faceMsg", result.message, result.success !== false);
+
+    // ✅ Hiển thị ảnh vừa gửi (sau khi thành công)
+    if (result.success) {
+      const img = document.getElementById("previewImage");
+      if (img) {
+        img.src = imageBase64;
+        img.style.display = "block";
+      }
+    }
   };
 }
 
@@ -311,6 +318,7 @@ window.viewClassesOfTeacher = async function (teacher_id) {
   container.innerHTML = html;
 };
 
+// ✅ Tự động bật camera nếu có phần tử "camera" và "overlay" trong trang
 window.addEventListener("DOMContentLoaded", async () => {
   const video = document.getElementById("camera");
   const canvas = document.getElementById("overlay");
