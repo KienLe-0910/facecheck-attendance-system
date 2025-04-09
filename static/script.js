@@ -247,7 +247,7 @@ if (finalBtn) {
     }
 
     try {
-      const res1 = await postJSON("/register_info", { student_id, name, password });
+      const res1 = await postJSON("/register_info", { student_id, name, password, role: "student" });
       const res2 = await postJSON("/upload_face", { student_id, image_data: imageBase64 });
 
       if (res1.success && res2.success) {
