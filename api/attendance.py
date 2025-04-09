@@ -11,6 +11,9 @@ import pytz
 
 router = APIRouter()
 
+MODEL_NAME = "ArcFace"
+THRESHOLD = 0.45  # phù hợp với ArcFace + cosine
+
 class AttendanceRequest(BaseModel):
     user_id: str
     session_id: int
@@ -28,8 +31,8 @@ def extract_embedding_from_base64(image_base64):
     try:
         embedding = DeepFace.represent(
             img_path=temp_image_path,
-            model_name="Facenet",
-            enforce_detection=False  # ✅ Cho phép xử lý ảnh dù không detect được mặt
+            model_name=MODEL_NAME,
+            enforce_detection=True
         )[0]["embedding"]
         return np.array(embedding, dtype=np.float32)
     finally:
@@ -54,7 +57,7 @@ def mark_attendance(request: AttendanceRequest):
         current_embedding = extract_embedding_from_base64(request.image_data)
 
         similarity = cosine_similarity(current_embedding, stored_embedding)
-        if similarity < 0.9:
+        if similarity < THRESHOLD:
             return {"success": False, "message": "❌ Khuôn mặt không khớp!"}
 
         # Kiểm tra phiên điểm danh
