@@ -62,8 +62,12 @@ def upload_face(request: UploadFaceRequest):
         temp_path = f"temp_face_{request.student_id}.jpg"
         cv2.imwrite(temp_path, rgb)
 
-        # Trích xuất embedding
-        embedding = DeepFace.represent(img_path=temp_path, model_name="Facenet")
+        # Trích xuất embedding với ArcFace
+        embedding = DeepFace.represent(
+            img_path=temp_path,
+            model_name="ArcFace",
+            enforce_detection=True
+        )
         embedding_vector = np.array(embedding[0]['embedding'], dtype=np.float32)
         embedding_str = base64.b64encode(embedding_vector.tobytes()).decode("utf-8")
 
