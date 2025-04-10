@@ -34,7 +34,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             class_id TEXT UNIQUE NOT NULL,
             class_name TEXT NOT NULL,
-            admin_id TEXT NOT NULL,
+            teacher_id TEXT NOT NULL,
             created_at TEXT
         )''')
 
