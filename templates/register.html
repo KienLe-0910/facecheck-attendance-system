@@ -25,9 +25,11 @@
       <video id="camera" autoplay muted playsinline style="border-radius: 10px;"></video>
       <canvas id="overlay" style="position:absolute; top:0; left:0;"></canvas>
     </div>
-    <br>
-    <button id="captureFace">📷 Chụp khuôn mặt</button>
+
+    <!-- ✅ Thêm vùng hiển thị thông báo số khuôn mặt giống attendance -->
     <p id="faceMsg" style="margin-top: 1rem;"></p>
+
+    <button id="captureFace">📷 Chụp khuôn mặt</button>
 
     <!-- Hiển thị ảnh khuôn mặt đã chụp -->
     <div id="facePreview" style="margin-top: 1rem; display: none;">
@@ -39,9 +41,103 @@
 
     <!-- Nút xác nhận cuối -->
     <button id="finalRegisterBtn" style="margin-top: 2rem;">✅ Xác nhận & đăng ký</button>
-    <p id="infoMsg" style="margin-top: 1rem;"></p>
+
+    <!-- ✅ Thêm vùng thông báo chính cho đăng ký -->
+    <p id="msg" style="margin-top: 1rem;"></p>
 
     <button style="margin-top: 1rem;" onclick="window.location.href='/login.html'">⬅️ Quay lại đăng nhập</button>
   </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      await startFaceDetectionOverlay("camera", "overlay");
+
+      window._faceCapturedImage = null;
+      window._faceWasValidAtCapture = false;
+
+      document.getElementById("captureFace").onclick = async () => {
+        const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+        const video = document.getElementById("camera");
+
+        const detections = await faceapi.detectAllFaces(video, options);
+        if (!detections || detections.length !== 1) {
+          showMessage("msg", "❌ Vui lòng đảm bảo chỉ có đúng 1 khuôn mặt trong khung hình!", false);
+          window._faceWasValidAtCapture = false;
+          return;
+        }
+
+        const user_id = document.getElementById("student_id").value.trim();
+        if (!user_id) {
+          showMessage("msg", "⚠ Vui lòng nhập mã người dùng trước.", false);
+          window._faceWasValidAtCapture = false;
+          return;
+        }
+
+        const imageBase64 = await captureFaceFromVideo("camera");
+        if (!imageBase64) {
+          showMessage("msg", "⚠ Không phát hiện được khuôn mặt!", false);
+          window._faceWasValidAtCapture = false;
+          return;
+        }
+
+        window._faceCapturedImage = imageBase64;
+        window._faceWasValidAtCapture = true;
+
+        const img = document.getElementById("previewImage");
+        const preview = document.getElementById("facePreview");
+        img.src = imageBase64;
+        preview.style.display = "block";
+
+        showMessage("msg", "✅ Đã chụp ảnh khuôn mặt!", true);
+      };
+
+      document.getElementById("retakeFace").onclick = () => {
+        document.getElementById("previewImage").src = "";
+        document.getElementById("facePreview").style.display = "none";
+        window._faceCapturedImage = null;
+        window._faceWasValidAtCapture = false;
+        showMessage("msg", "📸 Mời bạn chụp lại khuôn mặt.", true);
+      };
+
+      document.getElementById("finalRegisterBtn").onclick = async () => {
+        const user_id = document.getElementById("student_id").value.trim();
+        const name = document.getElementById("name").value.trim();
+        const password = document.getElementById("password").value;
+        const phone_number = document.getElementById("phone_number").value.trim();
+        const image_data = window._faceCapturedImage;
+
+        if (!user_id || !name || !password || !phone_number) {
+          showMessage("msg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
+          return;
+        }
+
+        if (!image_data) {
+          showMessage("msg", "⚠ Bạn chưa chụp ảnh khuôn mặt!", false);
+          return;
+        }
+
+        if (!window._faceWasValidAtCapture) {
+          showMessage("msg", "⚠ Ảnh chụp không hợp lệ. Vui lòng chụp lại!", false);
+          return;
+        }
+
+        const res = await postJSON("/register", {
+          user_id,
+          name,
+          password,
+          phone_number,
+          role: "student",
+          image_data
+        });
+
+        if (res.success) {
+          showMessage("msg", res.message || "✅ Đăng ký thành công!", true);
+          setTimeout(() => window.location.href = "/login.html", 2000);
+        } else {
+          showMessage("msg", res.message || "❌ Đăng ký thất bại!", false);
+        }
+      };
+    });
+  </script>
 </body>
 </html>
