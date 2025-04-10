@@ -57,17 +57,14 @@ window.startFaceDetectionOverlay = async function (videoId, canvasId) {
           if (detections.length === 0) {
             msgEl.textContent = "🚫 Không phát hiện khuôn mặt.";
             msgEl.style.color = "gray";
-            disableFaceActions(true);
             window._faceIsValid = false;
           } else if (detections.length > 1) {
             msgEl.textContent = `⚠️ Phát hiện ${detections.length} khuôn mặt!`;
             msgEl.style.color = "red";
-            disableFaceActions(true);
             window._faceIsValid = false;
           } else {
             msgEl.textContent = "✅ Phát hiện 1 khuôn mặt.";
             msgEl.style.color = "green";
-            disableFaceActions(false);
             window._faceIsValid = true;
           }
         }
@@ -100,14 +97,6 @@ window.startFaceDetectionOverlay = async function (videoId, canvasId) {
     });
   });
 };
-
-function disableFaceActions(disable = true) {
-  const btns = ["captureFace", "finalRegisterBtn", "markAttendanceBtn"];
-  btns.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.disabled = disable;
-  });
-}
 
 window.captureFaceFromVideo = async function (videoId) {
   const video = document.getElementById(videoId);
