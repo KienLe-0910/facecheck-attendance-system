@@ -80,7 +80,7 @@ def create_admin_account():
     cursor = conn.cursor()
 
     admin_id = "admin1"
-    admin_name = "Admin_1"
+    admin_name = "Admin 1"
     password = "codeadmin1"
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
