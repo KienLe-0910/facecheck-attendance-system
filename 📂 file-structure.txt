@@ -1,20 +1,22 @@
 📂 /face_attendance_system
 │── main.py               # Chạy ứng dụng chính
 │── requirements.txt       # Thư viện cần cài đặt
-│── file-structure.txt       # Thư viện cần cài đặt
+│── file-structure.txt       # Cấu trúc folder
 │
 ├──📂 api                   # Chứa các API endpoints
 │   ├── __init__.py        # Để Python nhận diện đây là một package
+|   ├── admin.py 
 │   ├── register.py        # API đăng ký sinh viên
 │   ├── attendance.py      # API điểm danh
 │   ├── enrollment.py # API xem danh sách điểm danh
+|   ├── info.py 
 │   ├── login.py
 │   ├── student.py
 │   ├── teacher.py
 │
 ├──📂 models                # Chứa các models và database
 │   ├── __init__.py        # Để Python nhận diện đây là một package
-│   ├── db.py        # Kết nối và tạo database
+│   ├── db.py           # Kết nối và tạo database
 │
 ├──📂 static                
 │   ├── script.js         
@@ -26,5 +28,7 @@
 │   ├── attendance.html    # Trang điểm danh
 │   ├── enroll.html
 │   ├── login.html
-│   ├── student_dashboard.html
-│   ├── teacher_dashboard.html
+│   ├── student.html
+│   ├── teacher.html
+│   ├── admin.html
+│   ├── info.html
