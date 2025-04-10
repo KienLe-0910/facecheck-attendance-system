@@ -51,14 +51,49 @@ window.startFaceDetectionOverlay = async function (videoId, canvasId) {
       const loop = async () => {
         const detections = await faceapi.detectAllFaces(video, options);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        detections.forEach(det => {
+
+        const msgEl = document.getElementById("faceMsg");
+        if (msgEl) {
+          if (detections.length === 0) {
+            msgEl.textContent = "🚫 Không phát hiện khuôn mặt.";
+            msgEl.style.color = "gray";
+            disableFaceActions(true);
+            window._faceIsValid = false;
+          } else if (detections.length > 1) {
+            msgEl.textContent = `⚠️ Phát hiện ${detections.length} khuôn mặt!`;
+            msgEl.style.color = "red";
+            disableFaceActions(true);
+            window._faceIsValid = false;
+          } else {
+            msgEl.textContent = "✅ Phát hiện 1 khuôn mặt.";
+            msgEl.style.color = "green";
+            disableFaceActions(false);
+            window._faceIsValid = true;
+          }
+        }
+
+        // Tìm khuôn mặt lớn nhất
+        let largestIndex = 0;
+        let maxArea = 0;
+        for (let i = 0; i < detections.length; i++) {
+          const box = detections[i].box;
+          const area = box.width * box.height;
+          if (area > maxArea) {
+            maxArea = area;
+            largestIndex = i;
+          }
+        }
+
+        // Vẽ khung viền
+        detections.forEach((det, i) => {
           const { x, y, width, height } = det.box;
           ctx.beginPath();
-          ctx.strokeStyle = "lime";
+          ctx.strokeStyle = i === largestIndex ? "lime" : "red";
           ctx.lineWidth = 3;
           ctx.rect(x, y, width, height);
           ctx.stroke();
         });
+
         requestAnimationFrame(loop);
       };
       loop();
@@ -66,13 +101,34 @@ window.startFaceDetectionOverlay = async function (videoId, canvasId) {
   });
 };
 
+function disableFaceActions(disable = true) {
+  const btns = ["captureFace", "finalRegisterBtn", "markAttendanceBtn"];
+  btns.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = disable;
+  });
+}
+
 window.captureFaceFromVideo = async function (videoId) {
   const video = document.getElementById(videoId);
   const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
-  const detection = await faceapi.detectSingleFace(video, options);
-  if (!detection) return null;
 
-  const { x, y, width, height } = detection.box;
+  const detections = await faceapi.detectAllFaces(video, options);
+  if (!detections || detections.length === 0) return null;
+
+  // Tìm khuôn mặt lớn nhất
+  let largest = detections[0];
+  let maxArea = largest.box.width * largest.box.height;
+
+  for (let i = 1; i < detections.length; i++) {
+    const area = detections[i].box.width * detections[i].box.height;
+    if (area > maxArea) {
+      largest = detections[i];
+      maxArea = area;
+    }
+  }
+
+  const { x, y, width, height } = largest.box;
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -565,6 +621,7 @@ if (window.location.pathname.endsWith("teacher.html")) {
       </tbody>
     `;
     resultDiv.appendChild(table);
+
 
     // Tạo nút xuất file CSV
     const exportBtn = document.createElement("button");
