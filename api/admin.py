@@ -1,88 +1,44 @@
-from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
-from models.db import get_db_connection
-import bcrypt
-from datetime import datetime
-import pytz
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Trang quản trị - Tạo và quản lý giảng viên</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="/static/script.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <h1>👨‍💼 Xin chào, <span id="admin-name">Admin</span></h1>
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+    <!-- TẠO TÀI KHOẢN GIẢNG VIÊN -->
+    <section>
+      <h2>➕ Tạo tài khoản giảng viên</h2>
+      <form id="create-teacher-form">
+        <label for="user_id">Mã giảng viên:</label><br />
+        <input type="text" id="user_id" required /><br /><br />
 
-def get_current_vietnam_time():
-    tz = pytz.timezone("Asia/Ho_Chi_Minh")
-    return datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+        <label for="name">Họ tên:</label><br />
+        <input type="text" id="name" required /><br /><br />
 
-# --------- Schema để tạo giảng viên ---------
-class CreateTeacherRequest(BaseModel):
-    user_id: str
-    name: str
-    password: str
+        <label for="password">Mật khẩu:</label><br />
+        <input type="password" id="password" required /><br /><br />
 
-# --------- API tạo tài khoản giảng viên ---------
-@router.post("/create_teacher")
-def create_teacher(user_data: CreateTeacherRequest):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_data.user_id,))
-        if cursor.fetchone():
-            raise HTTPException(status_code=400, detail="❌ Mã giảng viên đã tồn tại.")
+        <button type="submit">Tạo tài khoản</button>
+      </form>
+      <p id="message" style="margin-top: 20px; font-weight: bold;"></p>
+    </section>
 
-        hashed_pw = bcrypt.hashpw(user_data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-        now = get_current_vietnam_time()
+    <hr><br>
 
-        cursor.execute("""
-            INSERT INTO users (user_id, name, password, role, created_at)
-            VALUES (?, ?, ?, ?, ?)
-        """, (user_data.user_id, user_data.name, hashed_pw, "teacher", now))
-        conn.commit()
+    <!-- XEM DANH SÁCH GIẢNG VIÊN -->
+    <section>
+      <h2>📋 Danh sách giảng viên</h2>
+      <button id="load-teachers">🔄 Tải danh sách</button>
+      <div id="teachers-list" style="margin-top: 20px;"></div>
+    </section>
 
-        return {"success": True, "message": "✅ Đã tạo tài khoản giảng viên!"}
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lỗi khi tạo tài khoản: {e}")
-    finally:
-        conn.close()
-
-# --------- API lấy danh sách giảng viên ---------
-@router.get("/teachers")
-def get_all_teachers():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("SELECT user_id, name, created_at FROM users WHERE role = 'teacher'")
-        teachers = cursor.fetchall()
-        return {
-            "success": True,
-            "data": [
-                {"user_id": row["user_id"], "name": row["name"], "created_at": row["created_at"]}
-                for row in teachers
-            ]
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lỗi khi lấy danh sách giảng viên: {e}")
-    finally:
-        conn.close()
-
-# --------- API lấy danh sách lớp của một giảng viên ---------
-@router.get("/classes_of_teacher")
-def get_classes_of_teacher(teacher_id: str = Query(..., alias="teacher_id")):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-            SELECT class_id, class_name, created_at
-            FROM classes
-            WHERE teacher_id = ?
-        """, (teacher_id,))
-        classes = cursor.fetchall()
-        return {
-            "success": True,
-            "data": [
-                {"class_id": row["class_id"], "class_name": row["class_name"], "created_at": row["created_at"]}
-                for row in classes
-            ]
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lỗi khi lấy lớp của giảng viên: {e}")
-    finally:
-        conn.close()
+    <br>
+    <button id="logout-btn">🚪 Đăng xuất</button>
+  </div>
+</body>
+</html>
