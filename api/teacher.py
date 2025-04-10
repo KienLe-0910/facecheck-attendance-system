@@ -133,22 +133,37 @@ def get_sessions(class_id: str):
     finally:
         conn.close()
 
-# 📌 API: Lấy danh sách điểm danh theo session
 @router.get("/attendance_list_by_session")
-def get_attendance_list_by_session(session_id: int):
+def get_attendance_list_by_session(session_id: int, class_id: str):
     conn = get_db_connection()
     cursor = conn.cursor()
+
     try:
         cursor.execute("""
-            SELECT a.user_id, u.name, a.created_at, a.status
-            FROM attendance a
-            JOIN users u ON a.user_id = u.user_id
-            WHERE a.session_id = ?
-            ORDER BY a.created_at ASC
-        """, (session_id,))
+            SELECT u.user_id, u.name, a.status, a.created_at
+            FROM users u
+            LEFT JOIN attendance a ON u.user_id = a.user_id
+            LEFT JOIN enrollments e ON u.user_id = e.user_id
+            WHERE a.session_id = ? AND e.class_id = ?
+            ORDER BY u.name ASC
+        """, (session_id, class_id))
+
         records = cursor.fetchall()
-        data = [dict(row) for row in records]
+
+        if not records:
+            return {"success": False, "message": "Không có dữ liệu điểm danh cho lớp và phiên này."}
+
+        data = []
+        for row in records:
+            data.append({
+                "user_id": row[0],
+                "name": row[1],
+                "status": row[2] if row[2] else "Chưa điểm danh",  # Nếu không có status thì mặc định "Chưa điểm danh"
+                "created_at": row[3]
+            })
+
         return {"success": True, "data": data}
+
     except Exception as e:
         return {"success": False, "message": f"Lỗi hệ thống: {str(e)}"}
     finally:
