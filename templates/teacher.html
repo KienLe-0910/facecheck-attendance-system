@@ -2,69 +2,64 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Giảng viên - Bảng điều khiển</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>Trang Giảng Viên</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <script defer src="/static/script.js"></script>
 </head>
 <body>
   <div class="container">
-    <h2>👨‍🏫 Xin chào, <span id="teacherName">Giảng viên</span>!</h2>
-
-    <div class="menu">
-      <button onclick="loadClasses()">📋 Quản lý lớp học phần</button>
+    <h2>👨‍🏫 Trang Giảng Viên</h2>
+    <div>
+      <p><strong>Chào,</strong> <span id="teacherName">Giảng viên</span></p>
     </div>
 
-    <hr>
-    <h3>➕ Tạo lớp học phần mới</h3>
+    <!-- Thêm phần quản lý lớp học -->
+    <div id="classList">
+      <h3>Danh sách lớp học</h3>
+      <!-- Các lớp học sẽ được hiển thị ở đây -->
+    </div>
+
+    <!-- Form tạo lớp học -->
+    <h3>Tạo lớp học</h3>
     <form id="createClassForm">
-      <input type="text" id="class_id" placeholder="Mã lớp học phần" required>
-      <input type="text" id="class_name" placeholder="Tên lớp học phần" required>
-      <button type="submit">Tạo lớp</button>
+      <input type="text" id="class_id" placeholder="Mã lớp học" required />
+      <input type="text" id="class_name" placeholder="Tên lớp học" required />
+      <button type="submit">Tạo lớp học</button>
     </form>
-    <p id="createMsg"></p>
 
-    <hr>
-    <h3>🔍 Tìm kiếm lớp học phần</h3>
-    <input type="text" id="searchBox" placeholder="Nhập mã hoặc tên lớp...">
-
-    <h3>📚 Danh sách lớp học phần của bạn</h3>
-    <div id="classList"></div>
-    <p id="actionMsg"></p>
-
-    <hr>
-    <h3>🕒 Tạo phiên điểm danh cho lớp</h3>
+    <!-- Form tạo phiên điểm danh -->
+    <h3>Tạo phiên điểm danh</h3>
     <form id="createSessionForm">
-      <select id="session_class_id" required>
-        <option value="">-- Chọn lớp học phần --</option>
-      </select><br><br>
-
-      <label for="start_time">Bắt đầu:</label>
-      <input type="datetime-local" id="start_time" required><br><br>
-
-      <label for="end_time">Kết thúc:</label>
-      <input type="datetime-local" id="end_time" required><br><br>
-
+      <select id="session_class_id">
+        <option value="">-- Chọn lớp --</option>
+      </select>
+      <input type="datetime-local" id="start_time" required />
+      <input type="datetime-local" id="end_time" required />
       <button type="submit">Tạo phiên điểm danh</button>
     </form>
-    <p id="sessionMsg"></p>
 
-    <hr>
-    <h3>📋 Xem danh sách điểm danh</h3>
+    <!-- Xem điểm danh -->
+    <h3>Xem điểm danh</h3>
     <div>
       <label for="view_class">Chọn lớp:</label>
-      <select id="view_class"></select>
-
-      <label for="view_session" style="margin-left: 1rem;">Chọn phiên:</label>
-      <select id="view_session"></select>
-
-      <button id="view_attendance_btn">👁️ Xem</button>
+      <select id="view_class">
+        <option value="">-- Chọn lớp --</option>
+      </select>
     </div>
 
-    <div id="attendance_result" style="margin-top: 1rem;"></div>
+    <div>
+      <label for="view_session">Chọn phiên điểm danh:</label>
+      <select id="view_session">
+        <option value="">-- Chọn phiên --</option>
+      </select>
+    </div>
 
-    <hr>
-    <button onclick="logout()">🚪 Đăng xuất</button>
+    <button id="view_attendance_btn">📜 Xem điểm danh</button>
+
+    <!-- Kết quả điểm danh -->
+    <div id="attendance_result"></div>
+    
+    <button style="margin-top: 2rem;" onclick="logout()">🚪 Đăng xuất</button>
   </div>
-
-  <script src="/static/script.js"></script>
 </body>
 </html>
