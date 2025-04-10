@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 # Import các router
-from api import enrollment, register, login, attendance, teacher, student, admin
+from api import enrollment, register, login, attendance, teacher, student, admin, info
 
 # Tạo FastAPI app
 app = FastAPI(title="Hệ thống điểm danh bằng khuôn mặt")
@@ -12,6 +12,7 @@ app = FastAPI(title="Hệ thống điểm danh bằng khuôn mặt")
 # Mount static và templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/models", StaticFiles(directory="models"), name="models")
+app.mount("/face_images", StaticFiles(directory="face_images"), name="face_images")
 templates = Jinja2Templates(directory="templates")
 
 # Đăng ký các router API
@@ -22,11 +23,12 @@ app.include_router(teacher.router)
 app.include_router(enrollment.router)
 app.include_router(student.router)
 app.include_router(admin.router)
+app.include_router(info.router)
 
 
-@app.get("/face-test")
-def serve_face_test(request: Request):
-    return templates.TemplateResponse("face-test.html", {"request": request})
+# @app.get("/face-test")
+# def serve_face_test(request: Request):
+#     return templates.TemplateResponse("face-test.html", {"request": request})
 
 # Route HTML trang chính
 @app.get("/", response_class=HTMLResponse)
@@ -61,3 +63,7 @@ async def enroll_page(request: Request):
 @app.get("/admin.html", response_class=HTMLResponse)
 async def admin_page(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
+
+@app.get("/info.html", response_class=HTMLResponse)
+async def info_page(request: Request):
+    return templates.TemplateResponse("info.html", {"request": request})
