@@ -185,6 +185,7 @@ if (loginForm) {
 
 window._faceCapturedImage = null;
 
+// 📷 Chụp khuôn mặt
 const captureBtn = document.getElementById("captureFace");
 if (captureBtn) {
   captureBtn.onclick = async () => {
@@ -213,6 +214,7 @@ if (captureBtn) {
   };
 }
 
+// 🔁 Chụp lại ảnh
 const retakeBtn = document.getElementById("retakeFace");
 if (retakeBtn) {
   retakeBtn.onclick = () => {
@@ -228,39 +230,48 @@ if (retakeBtn) {
   };
 }
 
+// ✅ Gửi đăng ký (gộp cả info + ảnh + số điện thoại)
 const finalBtn = document.getElementById("finalRegisterBtn");
 if (finalBtn) {
   finalBtn.onclick = async () => {
-    const student_id = document.getElementById("student_id").value.trim();
+    const user_id = document.getElementById("student_id").value.trim();
     const name = document.getElementById("name").value.trim();
     const password = document.getElementById("password").value;
-    const imageBase64 = window._faceCapturedImage;
+    const phone_number = document.getElementById("phone_number").value.trim();
+    const image_data = window._faceCapturedImage;
 
-    if (!student_id || !name || !password) {
+    if (!user_id || !name || !password || !phone_number) {
       showMessage("infoMsg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
       return;
     }
 
-    if (!imageBase64) {
+    if (!image_data) {
       showMessage("faceMsg", "⚠ Bạn chưa chụp ảnh khuôn mặt!", false);
       return;
     }
 
     try {
-      const res1 = await postJSON("/register_info", { student_id, name, password, role: "student" });
-      const res2 = await postJSON("/upload_face", { student_id, image_data: imageBase64 });
+      const res = await postJSON("/register", {
+        user_id,
+        name,
+        password,
+        phone_number,
+        role: "student",
+        image_data
+      });
 
-      if (res1.success && res2.success) {
-        showMessage("infoMsg", "✅ Đăng ký thành công!", true);
-        showMessage("faceMsg", "✅ Khuôn mặt đã được lưu!", true);
+      if (res.success) {
+        showMessage("infoMsg", res.message || "✅ Đăng ký thành công!", true);
+        showMessage("faceMsg", "✅ Ảnh khuôn mặt đã được lưu!", true);
 
-        document.getElementById("infoMsg").scrollIntoView({ behavior: "smooth" });
+        setTimeout(() => {
+          window.location.href = "/login.html";
+        }, 2000);
       } else {
-        showMessage("infoMsg", res1.message || res1.detail || "❌ Lỗi thông tin", false);
-        showMessage("faceMsg", res2.message || res2.detail || "❌ Lỗi ảnh", false);
+        showMessage("infoMsg", res.message || "❌ Đăng ký thất bại!", false);
       }
     } catch (err) {
-      showMessage("infoMsg", "❌ Lỗi kết nối server", false);
+      showMessage("infoMsg", "❌ Lỗi kết nối server!", false);
       console.error(err);
     }
   };
@@ -378,6 +389,7 @@ if (window.location.pathname.endsWith("teacher.html")) {
 
   let allClasses = [];
 
+  // Tạo lớp học
   document.getElementById("createClassForm").onsubmit = async (e) => {
     e.preventDefault();
     const class_id = document.getElementById("class_id").value.trim();
@@ -396,6 +408,7 @@ if (window.location.pathname.endsWith("teacher.html")) {
     }
   };
 
+  // Tạo phiên điểm danh
   document.getElementById("createSessionForm").onsubmit = async (e) => {
     e.preventDefault();
     const class_id = document.getElementById("session_class_id").value;
@@ -413,6 +426,7 @@ if (window.location.pathname.endsWith("teacher.html")) {
     if (result.success) document.getElementById("createSessionForm").reset();
   };
 
+  // Tải danh sách lớp học
   async function loadClasses() {
     const res = await fetch(`/get_classes_by_teacher?teacher_id=${user_id}`);
     const result = await res.json();
@@ -432,6 +446,7 @@ if (window.location.pathname.endsWith("teacher.html")) {
     }
   }
 
+  // Render danh sách lớp học
   function renderClassList(classList) {
     const div = document.getElementById("classList");
     if (classList.length === 0) {
@@ -452,6 +467,7 @@ if (window.location.pathname.endsWith("teacher.html")) {
 
   window.loadClasses = loadClasses;
 
+  // Xoá lớp học
   window.deleteClass = async function (class_id) {
     if (!confirm(`Bạn có chắc chắn muốn xoá lớp ${class_id}?`)) return;
     const res = await fetch(`/delete_class?class_id=${class_id}`, { method: "DELETE" });
@@ -460,6 +476,7 @@ if (window.location.pathname.endsWith("teacher.html")) {
     if (result.success) loadClasses();
   };
 
+  // Sửa lớp học
   window.editClass = function (class_id) {
     const nameSpan = document.getElementById(`name-${class_id}`);
     const oldName = nameSpan.textContent;
@@ -474,43 +491,19 @@ if (window.location.pathname.endsWith("teacher.html")) {
     }
   };
 
-  window.exportAttendance = async function (class_id) {
-    const date = prompt("Nhập ngày điểm danh (YYYY-MM-DD):");
-    if (!date) return;
-
-    const res = await fetch(`/attendance_list?class_id=${class_id}&date=${date}`);
-    const result = await res.json();
-
-    if (!result.success || !result.data) {
-      alert(result.message || "Không có dữ liệu điểm danh.");
-      return;
-    }
-
-    const rows = ["Mã người dùng,Họ tên,Thời gian,Trạng thái"];
-    result.data.forEach(item => {
-      rows.push(`${item.user_id},${item.name},${item.timestamp},${item.status}`);
-    });
-
-    const blob = new Blob(["\uFEFF" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `diem_danh_${class_id}_${date}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   // Xem điểm danh theo phiên
   const viewClassSelect = document.getElementById("view_class");
   const viewSessionSelect = document.getElementById("view_session");
   const viewBtn = document.getElementById("view_attendance_btn");
   const resultDiv = document.getElementById("attendance_result");
 
+  // Cập nhật dropdown lớp học
   function updateClassDropdown(classes) {
     viewClassSelect.innerHTML = `<option value="">-- Chọn lớp --</option>` +
       classes.map(cls => `<option value="${cls.class_id}">${cls.class_id} - ${cls.class_name}</option>`).join("");
   }
 
+  // Tải phiên điểm danh
   viewClassSelect.onchange = async () => {
     const classId = viewClassSelect.value;
     viewSessionSelect.innerHTML = "<option value=''>-- Đang tải phiên... --</option>";
@@ -533,23 +526,25 @@ if (window.location.pathname.endsWith("teacher.html")) {
     }
   };
 
+  // Xem lịch sử điểm danh
   viewBtn.onclick = async () => {
     const sessionId = viewSessionSelect.value;
+    const classId = viewClassSelect.value;
     resultDiv.innerHTML = "";
-
-    if (!sessionId) {
-      resultDiv.innerHTML = "<p style='color:red;'>⚠ Vui lòng chọn phiên điểm danh.</p>";
+  
+    if (!sessionId || !classId) {
+      resultDiv.innerHTML = "<p style='color:red;'>⚠ Vui lòng chọn lớp và phiên điểm danh.</p>";
       return;
     }
-
-    const res = await fetch(`/attendance_list_by_session?session_id=${sessionId}`);
+  
+    const res = await fetch(`/attendance_list_by_session?session_id=${sessionId}&class_id=${classId}`);
     const result = await res.json();
-
+  
     if (!result.success || result.data.length === 0) {
       resultDiv.innerHTML = "<p>⚠ Không có dữ liệu điểm danh.</p>";
       return;
     }
-
+  
     const table = document.createElement("table");
     table.innerHTML = `
       <thead><tr>
@@ -561,7 +556,10 @@ if (window.location.pathname.endsWith("teacher.html")) {
             <td>${item.user_id}</td>
             <td>${item.name}</td>
             <td>${item.created_at}</td>
-            <td>${item.status === 'on-time' ? '✅ Có mặt' : '❌ Vắng'}</td>
+            <td>
+              ${item.status === 'on-time' ? '✅ Có mặt' : 
+                item.status === 'late' ? '⏰ Muộn' : '❌ Vắng'}
+            </td>
           </tr>
         `).join("")}
       </tbody>
@@ -594,13 +592,103 @@ if (window.location.pathname.endsWith("teacher.html")) {
   };
 
   loadClasses();
+}
 
-  document.getElementById("searchBox").addEventListener("input", () => {
-    const keyword = document.getElementById("searchBox").value.toLowerCase();
-    const filtered = allClasses.filter(cls =>
-      cls.class_id.toLowerCase().includes(keyword) ||
-      cls.class_name.toLowerCase().includes(keyword)
-    );
-    renderClassList(filtered);
-  });
+
+// =============================
+// ✅ Logic cho info.html
+// =============================
+if (window.location.pathname.endsWith("info.html")) {
+  const { user_id } = getCurrentUser();
+  if (!user_id) {
+    alert("Bạn chưa đăng nhập!");
+    window.location.href = "/login.html";
+  }
+
+  // 🚀 Load thông tin người dùng
+  fetch(`/info?user_id=${user_id}`)
+    .then(res => res.json())
+    .then(res => {
+      if (res.success) {
+        const data = res.data;
+        document.getElementById("infoUserId").textContent = data.user_id;
+        document.getElementById("infoUserName").textContent = data.name;
+        document.getElementById("infoUserRole").textContent = data.role;
+        document.getElementById("infoPhone").textContent = data.phone_number || "(chưa có)";
+        document.getElementById("infoUpdatedAt").textContent = data.updated_at || "(chưa có)";
+        document.getElementById("infoFaceImage").src = `/info/face_image?user_id=${user_id}`;
+      } else {
+        alert("Không lấy được thông tin tài khoản.");
+      }
+    });
+
+  // ✏️ Cập nhật tên
+  window.updateName = async function () {
+    const new_name = document.getElementById("newName").value.trim();
+    if (!new_name) return alert("Vui lòng nhập tên mới");
+
+    const res = await postJSON("/info/update_name", {
+      user_id,
+      new_name
+    });
+
+    alert(res.message || "Đã cập nhật tên");
+    location.reload();
+  };
+
+  // 🔑 Đổi mật khẩu
+  window.changePassword = async function () {
+    const old_password = document.getElementById("oldPassword").value;
+    const new_password = document.getElementById("newPassword").value;
+
+    if (!old_password || !new_password) {
+      alert("Vui lòng nhập đầy đủ mật khẩu");
+      return;
+    }
+
+    const res = await postJSON("/info/change_password", {
+      user_id,
+      old_password,
+      new_password
+    });
+
+    alert(res.message || "Đã đổi mật khẩu");
+    document.getElementById("oldPassword").value = "";
+    document.getElementById("newPassword").value = "";
+  };
+
+  // 📷 Cập nhật ảnh khuôn mặt
+  window.updateFaceImage = async function () {
+    const input = document.getElementById("faceImageInput");
+    const file = input.files[0];
+    if (!file) return alert("Vui lòng chọn ảnh");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`/info/update_face?user_id=${user_id}`, {
+      method: "POST",
+      body: formData
+    });
+
+    const result = await res.json();
+    alert(result.message || "Đã cập nhật ảnh");
+
+    input.value = "";
+    document.getElementById("infoFaceImage").src = `/info/face_image?user_id=${user_id}&t=${Date.now()}`; // để tránh cache
+  };
+
+  // 📱 Cập nhật số điện thoại
+  window.updatePhone = async function () {
+    const new_phone = document.getElementById("newPhone").value.trim();
+    if (!new_phone) return alert("Vui lòng nhập số điện thoại mới");
+
+    const res = await postJSON("/info/update_phone", {
+      user_id,
+      phone_number: new_phone
+    });
+
+    alert(res.message || "Đã cập nhật số điện thoại");
+    location.reload();
+  };
 }
