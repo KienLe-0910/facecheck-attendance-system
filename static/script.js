@@ -456,21 +456,34 @@ if (window.location.pathname.endsWith("teacher.html")) {
   // Tạo phiên điểm danh
   document.getElementById("createSessionForm").onsubmit = async (e) => {
     e.preventDefault();
+  
     const class_id = document.getElementById("session_class_id").value;
     const start_time = document.getElementById("start_time").value;
     const end_time = document.getElementById("end_time").value;
-
+  
+    if (!class_id) {
+      showMessage("sessionMsg", "⚠ Vui lòng chọn lớp học phần trước khi tạo phiên!", false);
+      return;
+    }
+  
+    if (!start_time || !end_time) {
+      showMessage("sessionMsg", "⚠ Vui lòng nhập thời gian bắt đầu và kết thúc!", false);
+      return;
+    }
+  
     const res = await fetch("/create_session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ class_id, start_time, end_time })
     });
-
+  
     const result = await res.json();
     showMessage("sessionMsg", result.message || result.detail, result.success !== false);
-    if (result.success) document.getElementById("createSessionForm").reset();
+    if (result.success) {
+      document.getElementById("createSessionForm").reset();
+    }
   };
-
+  
   // Tải danh sách lớp học
   async function loadClasses() {
     const res = await fetch(`/get_classes_by_teacher?teacher_id=${user_id}`);
