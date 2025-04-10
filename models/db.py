@@ -22,8 +22,11 @@ def init_db():
             password TEXT NOT NULL,
             name TEXT NOT NULL,
             role TEXT CHECK(role IN ('student', 'teacher', 'admin')) NOT NULL DEFAULT 'student',
+            phone_number TEXT,
             embedding BLOB,
-            created_at TEXT DEFAULT (DATETIME('now', 'localtime'))
+            face_image_path TEXT,
+            created_at TEXT DEFAULT (DATETIME('now', 'localtime')),
+            updated_at TEXT
         )''')
 
         # Bảng lớp học phần
@@ -53,7 +56,7 @@ def init_db():
             created_at TEXT NOT NULL
         )''')
 
-        # ✅ Bảng điểm danh (đã loại bỏ timestamp, chỉ dùng created_at)
+        # Bảng điểm danh
         cursor.execute('''CREATE TABLE IF NOT EXISTS attendance (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id TEXT NOT NULL,
