@@ -418,6 +418,26 @@ window.addEventListener("DOMContentLoaded", async () => {
       showMessage("faceMsg", "🚫 Không thể truy cập webcam.", false);
     }
   }
+
+  const passwordInputs = document.querySelectorAll("input[type='password']");
+  passwordInputs.forEach(input => {
+    const warning = document.createElement("p");
+    warning.style.color = "orange";
+    warning.style.fontSize = "0.9em";
+    warning.style.marginTop = "0.3rem";
+    warning.textContent = "⚠️ Caps Lock đang bật!";
+    warning.style.display = "none";
+    input.insertAdjacentElement("afterend", warning);
+
+    input.addEventListener("keydown", (e) => {
+      warning.style.display = e.getModifierState("CapsLock") ? "block" : "none";
+    });
+
+    input.addEventListener("blur", () => {
+      warning.style.display = "none";
+    });
+  });
+  
 });
 
 // ✅ Logic riêng cho trang teacher.html
