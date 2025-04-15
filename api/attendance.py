@@ -17,7 +17,9 @@ THRESHOLD = 0.45  # phù hợp với ArcFace + cosine
 class AttendanceRequest(BaseModel):
     user_id: str
     session_id: int
-    image_data: str  # Base64 ảnh khuôn mặt
+    image_front: str
+    image_left: str
+    image_right: str
 
 def extract_embedding_from_base64(image_base64):
     img_data = base64.b64decode(image_base64.split(",")[1])
@@ -32,9 +34,11 @@ def extract_embedding_from_base64(image_base64):
         embedding = DeepFace.represent(
             img_path=temp_image_path,
             model_name=MODEL_NAME,
-            enforce_detection=True
-        )[0]["embedding"]
-        return np.array(embedding, dtype=np.float32)
+            enforce_detection=False
+        )
+        if not embedding or 'embedding' not in embedding[0]:
+            return None
+        return np.array(embedding[0]["embedding"], dtype=np.float32)
     finally:
         os.remove(temp_image_path)
 
@@ -47,18 +51,35 @@ def mark_attendance(request: AttendanceRequest):
     cursor = conn.cursor()
 
     try:
-        # Lấy embedding đã lưu của user
-        cursor.execute("SELECT embedding FROM users WHERE user_id = ?", (request.user_id,))
+        # Lấy embeddings đã lưu
+        cursor.execute("""
+            SELECT embedding_front, embedding_left, embedding_right
+            FROM users WHERE user_id = ?
+        """, (request.user_id,))
         row = cursor.fetchone()
-        if not row or not row["embedding"]:
-            raise HTTPException(status_code=400, detail="❌ Không tìm thấy embedding của người dùng!")
+        if not row or not row["embedding_front"]:
+            raise HTTPException(status_code=400, detail="❌ Không tìm thấy dữ liệu khuôn mặt của người dùng!")
 
-        stored_embedding = np.frombuffer(base64.b64decode(row["embedding"]), dtype=np.float32)
-        current_embedding = extract_embedding_from_base64(request.image_data)
+        stored_front = np.frombuffer(base64.b64decode(row["embedding_front"]), dtype=np.float32)
+        stored_left = np.frombuffer(base64.b64decode(row["embedding_left"]), dtype=np.float32)
+        stored_right = np.frombuffer(base64.b64decode(row["embedding_right"]), dtype=np.float32)
 
-        similarity = cosine_similarity(current_embedding, stored_embedding)
-        if similarity < THRESHOLD:
-            return {"success": False, "message": "❌ Khuôn mặt không khớp!"}
+        embed_front = extract_embedding_from_base64(request.image_front)
+        embed_left = extract_embedding_from_base64(request.image_left)
+        embed_right = extract_embedding_from_base64(request.image_right)
+
+        if embed_front is None or embed_left is None or embed_right is None:
+            return {"success": False, "message": "❌ Không phát hiện được khuôn mặt trong ảnh. Vui lòng thử lại."}
+
+        # Tính điểm tương đồng trung bình
+        sim_f = cosine_similarity(embed_front, stored_front)
+        sim_l = cosine_similarity(embed_left, stored_left)
+        sim_r = cosine_similarity(embed_right, stored_right)
+
+        avg_similarity = (sim_f + sim_l + sim_r) / 3
+
+        if avg_similarity < THRESHOLD:
+            return {"success": False, "message": "❌ Khuôn mặt không khớp đủ 3 góc!"}
 
         # Kiểm tra phiên điểm danh
         cursor.execute("SELECT * FROM sessions WHERE id = ?", (request.session_id,))
