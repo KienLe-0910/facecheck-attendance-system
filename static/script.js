@@ -224,7 +224,7 @@ window.submitMotionRegister = async function () {
   };
 
   try {
-    const res = await postJSON("/register_motion", data);
+    const res = await postJSON("/register", data);
     if (res.success) {
       showMessage("msg", res.message || "✅ Đăng ký thành công!", true);
       setTimeout(() => window.location.href = "/login.html", 2000);
