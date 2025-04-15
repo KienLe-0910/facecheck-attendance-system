@@ -10,18 +10,25 @@ router = APIRouter()
 UPLOAD_FOLDER = "face_images"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-
 # 📌 API: Lấy thông tin người dùng
 @router.get("/info")
 def get_info(user_id: str = Query(...)):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT user_id, name, role, phone_number, face_image_path, updated_at FROM users WHERE user_id = ?", (user_id,))
+        cursor.execute("""
+            SELECT user_id, name, role, phone_number, 
+                   face_image_path_front, face_image_path_left, face_image_path_right,
+                   updated_at 
+            FROM users WHERE user_id = ?
+        """, (user_id,))
         row = cursor.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Không tìm thấy người dùng.")
-        return {"success": True, "data": dict(row)}
+        data = {key: row[key] for key in row.keys()}
+        # Gán mặt định là ảnh phía trước
+        data["face_image_path"] = row["face_image_path_front"]
+        return {"success": True, "data": data}
     finally:
         conn.close()
 
@@ -90,7 +97,7 @@ def update_face(
     updated_time = datetime.now().isoformat(" ", "seconds")
     try:
         cursor.execute(
-            "UPDATE users SET face_image_path = ?, updated_at = ? WHERE user_id = ?",
+            "UPDATE users SET face_image_path_front = ?, updated_at = ? WHERE user_id = ?",
             (filepath, updated_time, user_id)
         )
         conn.commit()
@@ -104,15 +111,16 @@ def update_face(
 def get_face_image(user_id: str = Query(...)):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT face_image_path FROM users WHERE user_id = ?", (user_id,))
+    cursor.execute("SELECT face_image_path_front FROM users WHERE user_id = ?", (user_id,))
     row = cursor.fetchone()
     conn.close()
 
-    if not row or not row["face_image_path"] or not os.path.exists(row["face_image_path"]):
+    if not row or not row["face_image_path_front"] or not os.path.exists(row["face_image_path_front"]):
         raise HTTPException(status_code=404, detail="Không tìm thấy ảnh khuôn mặt.")
-    
-    return FileResponse(row["face_image_path"])
 
+    return FileResponse(row["face_image_path_front"])
+
+# 📌 API: Cập nhật số điện thoại
 @router.post("/info/update_phone")
 def update_phone(
     user_id: str = Body(...),
