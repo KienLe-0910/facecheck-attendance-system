@@ -31,12 +31,61 @@ window.logout = function () {
   window.location.href = "/login.html";
 };
 
-window.startFaceDetectionOverlay = async function (videoId, canvasId) {
+// =============================
+// ✅ Khởi tạo sau khi DOM sẵn sàng (KHÔNG tự bật camera)
+// =============================
+window.addEventListener("DOMContentLoaded", () => {
+  // ✅ Cảnh báo Caps Lock cho các ô password
+  const passwordInputs = document.querySelectorAll("input[type='password']");
+  passwordInputs.forEach(input => {
+    const warning = document.createElement("p");
+    warning.style.color = "orange";
+    warning.style.fontSize = "0.9em";
+    warning.style.marginTop = "0.3rem";
+    warning.textContent = "⚠️ Caps Lock đang bật!";
+    warning.style.display = "none";
+    input.insertAdjacentElement("afterend", warning);
+
+    input.addEventListener("keydown", (e) => {
+      warning.style.display = e.getModifierState("CapsLock") ? "block" : "none";
+    });
+
+    input.addEventListener("blur", () => {
+      warning.style.display = "none";
+    });
+  });
+
+  // ✅ Nút chụp lại toàn bộ (reset flow)
+  const resetBtn = document.getElementById("resetCaptureBtn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      const video = document.getElementById("camera");
+      const stream = video.srcObject;
+      if (stream) stream.getTracks().forEach(track => track.stop());
+
+      ["front", "left", "right"].forEach(pos => {
+        const img = document.getElementById(`preview_${pos}`);
+        if (img) img.src = "";
+      });
+
+      window.motionImages = {};
+      startMotionFaceCapture("camera", "overlay");
+    });
+  }
+});
+
+
+// =============================
+// ✅ Quét khuôn mặt 3 góc (front, left, right)
+// =============================
+window.startMotionFaceCapture = async function (videoId, canvasId) {
   await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
+  await faceapi.nets.faceLandmark68TinyNet.loadFromUri("/models");
 
   const video = document.getElementById(videoId);
   const canvas = document.getElementById(canvasId);
   const ctx = canvas.getContext("2d");
+  const msgEl = document.getElementById("faceStepMsg");
 
   const stream = await navigator.mediaDevices.getUserMedia({ video: true });
   video.srcObject = stream;
@@ -44,88 +93,152 @@ window.startFaceDetectionOverlay = async function (videoId, canvasId) {
   video.addEventListener("loadedmetadata", () => {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
+  });
 
-    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+  const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+  const steps = ["front", "left", "right"];
+  const images = {};
+  let currentStep = 0;
+  let captureCooldown = 0;
 
-    video.addEventListener("play", () => {
-      const loop = async () => {
-        const detections = await faceapi.detectAllFaces(video, options);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+  let readyFrames = 0;
+  const REQUIRED_FRAMES = 35; // ~2 giây nếu 60fps
 
-        const msgEl = document.getElementById("faceMsg");
+  const loop = async () => {
+    const detections = await faceapi
+      .detectAllFaces(video, options)
+      .withFaceLandmarks(true);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (detections.length === 1) {
+      const det = detections[0];
+      const box = det.detection.box;
+      const landmarks = det.landmarks;
+
+      ctx.strokeStyle = "lime";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+      const noseX = landmarks.getNose()[3].x;
+      const eyeL = landmarks.getLeftEye()[0].x;
+      const eyeR = landmarks.getRightEye()[3].x;
+      const eyesMidX = (eyeL + eyeR) / 2;
+      const offset = noseX - eyesMidX;
+
+      const expected = steps[currentStep];
+      let ok = false;
+
+      if (expected === "front" && Math.abs(offset) < 10) ok = true;
+      if (expected === "left" && offset < -15) ok = true; // đã đảo ngược vì camera mirrored
+      if (expected === "right" && offset > 15) ok = true;
+
+      if (ok) {
+        readyFrames++;
         if (msgEl) {
-          if (detections.length === 0) {
-            msgEl.textContent = "🚫 Không phát hiện khuôn mặt.";
-            msgEl.style.color = "gray";
-            window._faceIsValid = false;
-          } else if (detections.length > 1) {
-            msgEl.textContent = `⚠️ Phát hiện ${detections.length} khuôn mặt!`;
-            msgEl.style.color = "red";
-            window._faceIsValid = false;
-          } else {
-            msgEl.textContent = "✅ Phát hiện 1 khuôn mặt.";
-            msgEl.style.color = "green";
-            window._faceIsValid = true;
-          }
+          msgEl.textContent = `👉 Bước ${currentStep + 1}/3: ${expected.toUpperCase()} ✅ (${readyFrames}/${REQUIRED_FRAMES})`;
         }
 
-        // Tìm khuôn mặt lớn nhất
-        let largestIndex = 0;
-        let maxArea = 0;
-        for (let i = 0; i < detections.length; i++) {
-          const box = detections[i].box;
-          const area = box.width * box.height;
-          if (area > maxArea) {
-            maxArea = area;
-            largestIndex = i;
+        if (readyFrames >= REQUIRED_FRAMES && captureCooldown === 0) {
+          const cropCanvas = document.createElement("canvas");
+          cropCanvas.width = box.width;
+          cropCanvas.height = box.height;
+          const cropCtx = cropCanvas.getContext("2d");
+          cropCtx.drawImage(
+            video,
+            box.x,
+            box.y,
+            box.width,
+            box.height,
+            0,
+            0,
+            box.width,
+            box.height
+          );
+
+          images[expected] = cropCanvas.toDataURL("image/jpeg");
+
+          const imgEl = document.getElementById(`preview_${expected}`);
+          if (imgEl) imgEl.src = images[expected];
+
+          currentStep++;
+          captureCooldown = 60;
+          readyFrames = 0;
+
+          if (currentStep >= steps.length) {
+            if (msgEl) msgEl.textContent = "✅ Đã hoàn tất chụp 3 góc!";
+            video.pause();
+            stream.getTracks().forEach(t => t.stop());
+            window.motionImages = images;
+            return;
           }
         }
+      } else {
+        readyFrames = 0;
+        if (msgEl)
+          msgEl.textContent = `👉 Bước ${currentStep + 1}/3: ${expected.toUpperCase()} ❌`;
+      }
+    } else {
+      readyFrames = 0;
+      if (msgEl)
+        msgEl.textContent = "⚠️ Vui lòng để đúng 1 khuôn mặt trong khung hình";
+    }
 
-        // Vẽ khung viền
-        detections.forEach((det, i) => {
-          const { x, y, width, height } = det.box;
-          ctx.beginPath();
-          ctx.strokeStyle = i === largestIndex ? "lime" : "red";
-          ctx.lineWidth = 3;
-          ctx.rect(x, y, width, height);
-          ctx.stroke();
-        });
+    if (captureCooldown > 0) captureCooldown--;
+    requestAnimationFrame(loop);
+  };
 
-        requestAnimationFrame(loop);
-      };
-      loop();
-    });
+  video.addEventListener("playing", () => {
+    loop();
   });
 };
 
-window.captureFaceFromVideo = async function (videoId) {
-  const video = document.getElementById(videoId);
-  const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
 
-  const detections = await faceapi.detectAllFaces(video, options);
-  if (!detections || detections.length === 0) return null;
+// GỬI LÊN BACKEND
+window.submitMotionRegister = async function () {
+  const user_id = document.getElementById("student_id")?.value.trim();
+  const name = document.getElementById("name")?.value.trim();
+  const password = document.getElementById("password")?.value;
+  const phone_number = document.getElementById("phone_number")?.value.trim();
+  const msg = document.getElementById("msg");
 
-  // Tìm khuôn mặt lớn nhất
-  let largest = detections[0];
-  let maxArea = largest.box.width * largest.box.height;
-
-  for (let i = 1; i < detections.length; i++) {
-    const area = detections[i].box.width * detections[i].box.height;
-    if (area > maxArea) {
-      largest = detections[i];
-      maxArea = area;
-    }
+  if (!user_id || !name || !password || !phone_number) {
+    showMessage("msg", "⚠️ Vui lòng nhập đầy đủ thông tin!", false);
+    return;
   }
 
-  const { x, y, width, height } = largest.box;
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, x, y, width, height, 0, 0, width, height);
-  return canvas.toDataURL("image/jpeg");
+  if (!window.motionImages || !window.motionImages.front || !window.motionImages.left || !window.motionImages.right) {
+    showMessage("msg", "⚠️ Bạn chưa hoàn tất đăng ký khuôn mặt 3 hướng!", false);
+    return;
+  }
+
+  const data = {
+    user_id,
+    name,
+    password,
+    phone_number,
+    role: "student",
+    image_front: window.motionImages.front,
+    image_left: window.motionImages.left,
+    image_right: window.motionImages.right
+  };
+
+  try {
+    const res = await postJSON("/register_motion", data);
+    if (res.success) {
+      showMessage("msg", res.message || "✅ Đăng ký thành công!", true);
+      setTimeout(() => window.location.href = "/login.html", 2000);
+    } else {
+      showMessage("msg", res.message || "❌ Lỗi đăng ký!", false);
+    }
+  } catch (err) {
+    showMessage("msg", "❌ Lỗi kết nối server!", false);
+    console.error(err);
+  }
 };
 
+
+// Xem lớp học phần đã đăng ký
 window.viewRegisteredClasses = async function () {
   const { user_id } = getCurrentUser();
   const res = await fetch(`/get_student_classes?user_id=${user_id}`);
@@ -228,99 +341,7 @@ if (loginForm) {
 // ✅ Đăng ký tài khoản (register.html)
 // =============================
 
-window._faceCapturedImage = null;
 
-// 📷 Chụp khuôn mặt
-const captureBtn = document.getElementById("captureFace");
-if (captureBtn) {
-  captureBtn.onclick = async () => {
-    const user_id = document.getElementById("student_id").value.trim();
-    if (!user_id) {
-      showMessage("faceMsg", "⚠ Vui lòng nhập mã người dùng trước.", false);
-      return;
-    }
-
-    const imageBase64 = await captureFaceFromVideo("camera");
-    if (!imageBase64) {
-      showMessage("faceMsg", "⚠ Không phát hiện được khuôn mặt!", false);
-      return;
-    }
-
-    // Hiển thị preview
-    window._faceCapturedImage = imageBase64;
-    const img = document.getElementById("previewImage");
-    const preview = document.getElementById("facePreview");
-
-    img.src = imageBase64;
-    img.style.display = "block";
-    preview.style.display = "block";
-
-    showMessage("faceMsg", "✅ Đã chụp ảnh, vui lòng xác nhận hoặc chụp lại.", true);
-  };
-}
-
-// 🔁 Chụp lại ảnh
-const retakeBtn = document.getElementById("retakeFace");
-if (retakeBtn) {
-  retakeBtn.onclick = () => {
-    const img = document.getElementById("previewImage");
-    const preview = document.getElementById("facePreview");
-
-    img.src = "";
-    img.style.display = "none";
-    preview.style.display = "none";
-    window._faceCapturedImage = null;
-
-    showMessage("faceMsg", "📸 Mời bạn chụp lại khuôn mặt.", true);
-  };
-}
-
-// ✅ Gửi đăng ký (gộp cả info + ảnh + số điện thoại)
-const finalBtn = document.getElementById("finalRegisterBtn");
-if (finalBtn) {
-  finalBtn.onclick = async () => {
-    const user_id = document.getElementById("student_id").value.trim();
-    const name = document.getElementById("name").value.trim();
-    const password = document.getElementById("password").value;
-    const phone_number = document.getElementById("phone_number").value.trim();
-    const image_data = window._faceCapturedImage;
-
-    if (!user_id || !name || !password || !phone_number) {
-      showMessage("infoMsg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
-      return;
-    }
-
-    if (!image_data) {
-      showMessage("faceMsg", "⚠ Bạn chưa chụp ảnh khuôn mặt!", false);
-      return;
-    }
-
-    try {
-      const res = await postJSON("/register", {
-        user_id,
-        name,
-        password,
-        phone_number,
-        role: "student",
-        image_data
-      });
-
-      if (res.success) {
-        showMessage("infoMsg", res.message || "✅ Đăng ký thành công!", true);
-        showMessage("faceMsg", "✅ Ảnh khuôn mặt đã được lưu!", true);
-
-        setTimeout(() => {
-          window.location.href = "/login.html";
-        }, 2000);
-      } else {
-        showMessage("infoMsg", res.message || "❌ Đăng ký thất bại!", false);
-      }
-    } catch (err) {
-      showMessage("infoMsg", "❌ Lỗi kết nối server!", false);
-      console.error(err);
-    }
-  };
-}
 
 
 // =============================
@@ -402,43 +423,6 @@ window.viewClassesOfTeacher = async function (teacher_id) {
   container.innerHTML = html;
 };
 
-// =============================
-// ✅ Tự động bật camera nếu có
-// =============================
-window.addEventListener("DOMContentLoaded", async () => {
-  const video = document.getElementById("camera");
-  const canvas = document.getElementById("overlay");
-
-  if (video && canvas) {
-    try {
-      await startFaceDetectionOverlay("camera", "overlay");
-      console.log("[INFO] ✅ Camera đã sẵn sàng.");
-    } catch (err) {
-      console.error("[ERROR] Lỗi bật camera:", err);
-      showMessage("faceMsg", "🚫 Không thể truy cập webcam.", false);
-    }
-  }
-
-  const passwordInputs = document.querySelectorAll("input[type='password']");
-  passwordInputs.forEach(input => {
-    const warning = document.createElement("p");
-    warning.style.color = "orange";
-    warning.style.fontSize = "0.9em";
-    warning.style.marginTop = "0.3rem";
-    warning.textContent = "⚠️ Caps Lock đang bật!";
-    warning.style.display = "none";
-    input.insertAdjacentElement("afterend", warning);
-
-    input.addEventListener("keydown", (e) => {
-      warning.style.display = e.getModifierState("CapsLock") ? "block" : "none";
-    });
-
-    input.addEventListener("blur", () => {
-      warning.style.display = "none";
-    });
-  });
-  
-});
 
 // ✅ Logic riêng cho trang teacher.html
 if (window.location.pathname.endsWith("teacher.html")) {
