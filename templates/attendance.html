@@ -11,104 +11,36 @@
   <div class="container">
     <h2>📸 Điểm danh bằng khuôn mặt</h2>
 
+    <!-- Chọn phiên -->
     <form id="attendanceForm">
       <label for="session_id">Chọn phiên điểm danh:</label><br />
       <select id="session_id" required></select><br />
-
-      <div class="video-wrapper" style="margin-top: 1rem;">
-        <video id="video" autoplay muted playsinline></video>
-        <canvas id="overlay"></canvas>
-      </div>
-
-      <p id="faceMsg" style="margin-top: 0.5rem;"></p>
-
-      <button type="button" id="captureBtn">📸 Chụp khuôn mặt</button>
-      <button type="submit" id="markAttendanceBtn">✅ Xác nhận điểm danh</button>
     </form>
 
+    <!-- Camera -->
+    <div class="video-wrapper" style="margin-top: 1rem;">
+      <video id="camera" autoplay muted playsinline></video>
+      <canvas id="overlay"></canvas>
+    </div>
+    <p id="faceStepMsg" style="margin-top: 0.5rem;"></p>
+
+    <!-- Nút quét & reset -->
+    <button onclick="startMotionFaceCapture('camera', 'overlay')">🚀 Bắt đầu quét</button>
+    <button id="resetCaptureBtn">🔁 Chụp lại từ đầu</button>
+
+    <!-- Ảnh preview -->
+    <div style="margin-top: 1.5rem;">
+      <h4>🖼️ Ảnh đã chụp:</h4>
+      <img id="preview_front" style="width: 150px; margin-right: 1rem;" />
+      <img id="preview_left" style="width: 150px; margin-right: 1rem;" />
+      <img id="preview_right" style="width: 150px;" />
+    </div>
+
+    <!-- Nút xác nhận -->
+    <button onclick="submitMotionAttendance()" style="margin-top: 2rem;">✅ Xác nhận điểm danh</button>
+
     <p id="msg" style="margin-top: 1rem;"></p>
-    <button onclick="window.location.href='/student.html'">⬅️ Quay lại</button>
+    <button style="margin-top: 1rem;" onclick="window.location.href='/student.html'">⬅️ Quay lại</button>
   </div>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", async () => {
-      const { user_id, role } = getCurrentUser();
-      if (!user_id || role !== "student") {
-        alert("Bạn chưa đăng nhập với tư cách sinh viên!");
-        window.location.href = "/login.html";
-        return;
-      }
-
-      // Bật camera + overlay phát hiện khuôn mặt
-      await startFaceDetectionOverlay("video", "overlay");
-
-      let imageData = "";
-
-      // Chụp ảnh từ camera khi nhấn "Chụp"
-      document.getElementById("captureBtn").onclick = async () => {
-        const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
-        const video = document.getElementById("video");
-
-        const detections = await faceapi.detectAllFaces(video, options);
-        if (!detections || detections.length !== 1) {
-          showMessage("msg", "❌ Vui lòng đảm bảo chỉ có đúng 1 khuôn mặt trong khung hình!", false);
-          window._faceWasValidAtCapture = false;
-          return;
-        }
-
-        const result = await captureFaceFromVideo("video");
-        if (!result) {
-          showMessage("msg", "⚠️ Không phát hiện được khuôn mặt!", false);
-          window._faceWasValidAtCapture = false;
-          return;
-        }
-
-        imageData = result;
-        window._faceWasValidAtCapture = true; // ✅ Lưu lại trạng thái
-        showMessage("msg", "✅ Đã chụp ảnh khuôn mặt!", true);
-      };
-
-      // Gửi ảnh lên API điểm danh
-      document.getElementById("attendanceForm").onsubmit = async (e) => {
-        e.preventDefault();
-
-        if (!imageData) {
-          showMessage("msg", "⚠️ Vui lòng chụp ảnh trước!", false);
-          return;
-        }
-
-        if (!window._faceWasValidAtCapture) {
-          showMessage("msg", "⚠️ Ảnh chụp không hợp lệ. Vui lòng chụp lại!", false);
-          return;
-        }
-
-        const session_id = document.getElementById("session_id").value;
-        const result = await postJSON("/attendance", {
-          user_id,
-          session_id,
-          image_data: imageData
-        });
-
-        showMessage("msg", result.message || result.detail, result.success !== false);
-      };
-
-      // Load danh sách phiên điểm danh
-      const res = await fetch(`/get_available_sessions?user_id=${user_id}`);
-      const result = await res.json();
-      const select = document.getElementById("session_id");
-
-      if (result.success && result.data.length > 0) {
-        result.data.forEach(session => {
-          const opt = document.createElement("option");
-          opt.value = session.session_id;
-          opt.textContent = `${session.class_name} (${session.start_time} - ${session.end_time})`;
-          select.appendChild(opt);
-        });
-      } else {
-        showMessage("msg", "⚠️ Không có phiên điểm danh khả dụng!", false);
-        document.getElementById("attendanceForm").style.display = "none";
-      }
-    });
-  </script>
 </body>
 </html>
