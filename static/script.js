@@ -34,8 +34,8 @@ window.logout = function () {
 // =============================
 // ✅ Khởi tạo sau khi DOM sẵn sàng (KHÔNG tự bật camera)
 // =============================
-window.addEventListener("DOMContentLoaded", () => {
-  // ✅ Cảnh báo Caps Lock cho các ô password
+window.addEventListener("DOMContentLoaded", async () => {
+  // ✅ 1. Cảnh báo Caps Lock cho input password
   const passwordInputs = document.querySelectorAll("input[type='password']");
   passwordInputs.forEach(input => {
     const warning = document.createElement("p");
@@ -55,12 +55,12 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // ✅ Nút chụp lại toàn bộ (reset flow)
+  // ✅ 2. Reset lại flow motion nếu có nút
   const resetBtn = document.getElementById("resetCaptureBtn");
   if (resetBtn) {
     resetBtn.addEventListener("click", () => {
       const video = document.getElementById("camera");
-      const stream = video.srcObject;
+      const stream = video?.srcObject;
       if (stream) stream.getTracks().forEach(track => track.stop());
 
       ["front", "left", "right"].forEach(pos => {
@@ -72,7 +72,34 @@ window.addEventListener("DOMContentLoaded", () => {
       startMotionFaceCapture("camera", "overlay");
     });
   }
+
+  // ✅ 3. Nếu đang ở trang attendance.html thì load danh sách phiên
+  if (window.location.pathname.endsWith("attendance.html")) {
+    const { user_id, role } = getCurrentUser();
+    if (!user_id || role !== "student") {
+      alert("Bạn chưa đăng nhập với tư cách sinh viên!");
+      window.location.href = "/login.html";
+      return;
+    }
+
+    const res = await fetch(`/get_available_sessions?user_id=${user_id}`);
+    const result = await res.json();
+    const select = document.getElementById("session_id");
+
+    if (result.success && result.data.length > 0) {
+      result.data.forEach(session => {
+        const opt = document.createElement("option");
+        opt.value = session.session_id;
+        opt.textContent = `${session.class_name} (${session.start_time} - ${session.end_time})`;
+        select.appendChild(opt);
+      });
+    } else {
+      showMessage("msg", "⚠️ Không có phiên điểm danh khả dụng!", false);
+      document.getElementById("attendanceForm")?.style?.setProperty("display", "none");
+    }
+  }
 });
+
 
 
 // =============================
@@ -236,6 +263,39 @@ window.submitMotionRegister = async function () {
     console.error(err);
   }
 };
+
+// ✅ Gửi điểm danh bằng 3 ảnh
+window.submitMotionAttendance = async function () {
+  const { user_id } = getCurrentUser();
+  const session_id = document.getElementById("session_id")?.value;
+
+  if (!user_id || !session_id) {
+    showMessage("msg", "⚠️ Thiếu thông tin người dùng hoặc phiên.", false);
+    return;
+  }
+
+  if (!window.motionImages || !window.motionImages.front || !window.motionImages.left || !window.motionImages.right) {
+    showMessage("msg", "⚠️ Bạn chưa hoàn tất quét đủ 3 ảnh khuôn mặt!", false);
+    return;
+  }
+
+  const data = {
+    user_id,
+    session_id,
+    image_front: window.motionImages.front,
+    image_left: window.motionImages.left,
+    image_right: window.motionImages.right
+  };
+
+  try {
+    const res = await postJSON("/attendance", data);
+    showMessage("msg", res.message || "❌ Lỗi khi điểm danh!", res.success !== false);
+  } catch (err) {
+    showMessage("msg", "❌ Lỗi kết nối server!", false);
+    console.error(err);
+  }
+};
+
 
 
 // Xem lớp học phần đã đăng ký
