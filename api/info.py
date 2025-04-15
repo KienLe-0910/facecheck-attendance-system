@@ -1,140 +1,57 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Body, Query
-from fastapi.responses import FileResponse
-from models.db import get_db_connection
-import os
-import sqlite3
-from uuid import uuid4
-from datetime import datetime
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Thông tin tài khoản</title>
+  <link rel="stylesheet" href="static/style.css" />
+</head>
+<body>
+  <div class="container">
+    <h2>👤 Thông tin tài khoản</h2>
 
-router = APIRouter()
-UPLOAD_FOLDER = "face_images"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    <div class="info-section">
+      <p><strong>Mã người dùng:</strong> <span id="infoUserId">...</span></p>
+      <p><strong>Tên hiển thị:</strong> <span id="infoUserName">...</span></p>
+      <p><strong>Vai trò:</strong> <span id="infoUserRole">...</span></p>
+      <p><strong>Số điện thoại:</strong> <span id="infoPhone">...</span></p>
+      <p><strong>Ảnh cập nhật:</strong> <span id="infoUpdatedAt">...</span></p>
+      <div class="avatar-preview">
+        <img id="infoFaceImage" src="" alt="Ảnh khuôn mặt" style="max-width: 200px; border-radius: 12px;" />
+      </div>
+    </div>
 
-# 📌 API: Lấy thông tin người dùng
-@router.get("/info")
-def get_info(user_id: str = Query(...)):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-            SELECT user_id, name, role, phone_number, 
-                   face_image_path_front, face_image_path_left, face_image_path_right,
-                   updated_at 
-            FROM users WHERE user_id = ?
-        """, (user_id,))
-        row = cursor.fetchone()
-        if not row:
-            raise HTTPException(status_code=404, detail="Không tìm thấy người dùng.")
-        data = {key: row[key] for key in row.keys()}
-        # Gán mặt định là ảnh phía trước
-        data["face_image_path"] = row["face_image_path_front"]
-        return {"success": True, "data": data}
-    finally:
-        conn.close()
+    <hr />
 
+    <div class="form-section">
+      <h3>✏️ Cập nhật tên hiển thị</h3>
+      <input type="text" id="newName" placeholder="Nhập tên mới" />
+      <button onclick="updateName()">Cập nhật tên</button>
+    </div>
 
-# 📌 API: Cập nhật tên hiển thị
-@router.post("/info/update_name")
-def update_name(
-    user_id: str = Body(...),
-    new_name: str = Body(...),
-):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    updated_time = datetime.now().isoformat(" ", "seconds")
-    try:
-        cursor.execute(
-            "UPDATE users SET name = ?, updated_at = ? WHERE user_id = ?",
-            (new_name, updated_time, user_id)
-        )
-        conn.commit()
-        return {"message": "Cập nhật tên thành công."}
-    finally:
-        conn.close()
+    <div class="form-section">
+        <h3>📱 Cập nhật số điện thoại</h3>
+        <input type="text" id="newPhone" placeholder="Nhập số điện thoại mới" />
+        <button onclick="updatePhone()">Cập nhật số điện thoại</button>
+    </div>
+      
+    <div class="form-section">
+      <h3>🔑 Đổi mật khẩu</h3>
+      <input type="password" id="oldPassword" placeholder="Mật khẩu cũ" />
+      <input type="password" id="newPassword" placeholder="Mật khẩu mới" />
+      <button onclick="changePassword()">Đổi mật khẩu</button>
+    </div>
 
+    <div class="form-section">
+      <h3>📷 Cập nhật ảnh khuôn mặt</h3>
+      <input type="file" id="faceImageInput" accept="image/*" />
+      <button onclick="updateFaceImage()">Cập nhật ảnh</button>
+    </div>
 
-# 📌 API: Đổi mật khẩu
-@router.post("/info/change_password")
-def change_password(
-    user_id: str = Body(...),
-    old_password: str = Body(...),
-    new_password: str = Body(...),
-):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("SELECT password FROM users WHERE user_id = ?", (user_id,))
-        row = cursor.fetchone()
-        if not row or row[0] != old_password:
-            raise HTTPException(status_code=400, detail="Mật khẩu cũ không đúng.")
+    <div class="form-section">
+      <button onclick="logout()">🚪 Đăng xuất</button>
+    </div>
+  </div>
 
-        updated_time = datetime.now().isoformat(" ", "seconds")
-        cursor.execute(
-            "UPDATE users SET password = ?, updated_at = ? WHERE user_id = ?",
-            (new_password, updated_time, user_id)
-        )
-        conn.commit()
-        return {"message": "Mật khẩu đã được thay đổi."}
-    finally:
-        conn.close()
-
-
-# 📌 API: Cập nhật ảnh khuôn mặt
-@router.post("/info/update_face")
-def update_face(
-    user_id: str = Query(...),
-    file: UploadFile = File(...)
-):
-    ext = os.path.splitext(file.filename)[-1]
-    filename = f"{user_id}_{uuid4().hex}{ext}"
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
-
-    with open(filepath, "wb") as f:
-        f.write(file.file.read())
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    updated_time = datetime.now().isoformat(" ", "seconds")
-    try:
-        cursor.execute(
-            "UPDATE users SET face_image_path_front = ?, updated_at = ? WHERE user_id = ?",
-            (filepath, updated_time, user_id)
-        )
-        conn.commit()
-        return {"message": "Ảnh khuôn mặt đã được cập nhật."}
-    finally:
-        conn.close()
-
-
-# 📌 API: Trả về ảnh khuôn mặt
-@router.get("/info/face_image")
-def get_face_image(user_id: str = Query(...)):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT face_image_path_front FROM users WHERE user_id = ?", (user_id,))
-    row = cursor.fetchone()
-    conn.close()
-
-    if not row or not row["face_image_path_front"] or not os.path.exists(row["face_image_path_front"]):
-        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh khuôn mặt.")
-
-    return FileResponse(row["face_image_path_front"])
-
-# 📌 API: Cập nhật số điện thoại
-@router.post("/info/update_phone")
-def update_phone(
-    user_id: str = Body(...),
-    phone_number: str = Body(...),
-):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    updated_time = datetime.now().isoformat(" ", "seconds")
-    try:
-        cursor.execute(
-            "UPDATE users SET phone_number = ?, updated_at = ? WHERE user_id = ?",
-            (phone_number, updated_time, user_id)
-        )
-        conn.commit()
-        return {"message": "Cập nhật số điện thoại thành công."}
-    finally:
-        conn.close()
+  <script src="static/script.js"></script>
+</body>
+</html>
