@@ -15,7 +15,7 @@ def init_db():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
-        # Bảng người dùng
+        # Bảng người dùng (motion-based)
         cursor.execute('''CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id TEXT UNIQUE NOT NULL,
@@ -23,8 +23,12 @@ def init_db():
             name TEXT NOT NULL,
             role TEXT CHECK(role IN ('student', 'teacher', 'admin')) NOT NULL DEFAULT 'student',
             phone_number TEXT,
-            embedding BLOB,
-            face_image_path TEXT,
+            embedding_front BLOB,
+            embedding_left BLOB,
+            embedding_right BLOB,
+            face_image_path_front TEXT,
+            face_image_path_left TEXT,
+            face_image_path_right TEXT,
             created_at TEXT DEFAULT (DATETIME('now', 'localtime')),
             updated_at TEXT
         )''')
