@@ -22,6 +22,7 @@ def init_db():
             password TEXT NOT NULL,
             name TEXT NOT NULL,
             role TEXT CHECK(role IN ('student', 'teacher', 'admin')) NOT NULL DEFAULT 'student',
+            email TEXT,
             phone_number TEXT,
             embedding_front BLOB,
             embedding_left BLOB,
