@@ -122,7 +122,7 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
     canvas.height = video.videoHeight;
   });
 
-  const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+  const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 });
   const steps = ["front", "left", "right"];
   const images = {};
   let currentStep = 0;
