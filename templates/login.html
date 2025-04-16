@@ -4,11 +4,13 @@
   <meta charset="UTF-8" />
   <title>Đăng nhập</title>
   <link rel="stylesheet" href="/static/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
   <script src="/static/script.js" defer></script>
 </head>
-<body>
-  <div class="container">
-    <h2>🔐 Đăng nhập hệ thống</h2>
+<div class="login-container">
+  <div class="login-card">
+    <img src="/static/img/neu-logo.png" alt="Logo" class="logo" />
+    <h2>Đăng nhập hệ thống</h2>
 
     <form id="loginForm">
       <input type="text" id="user_id" name="user_id" placeholder="Mã người dùng" required />
@@ -16,10 +18,8 @@
       <button type="submit">Đăng nhập</button>
     </form>
 
-    <p id="loginMsg" style="margin-top: 1rem;"></p>
+    <p id="loginMsg"></p>
 
-    <br />
-    <a href="/register.html">📝 Chưa có tài khoản? Đăng ký tại đây</a>
+    <a href="/register.html" class="link-button">📝 Chưa có tài khoản? Đăng ký tại đây</a>
   </div>
-</body>
-</html>
+</div>
