@@ -63,8 +63,10 @@ window.addEventListener("DOMContentLoaded", async () => {
       const stream = video?.srcObject;
       if (stream) stream.getTracks().forEach(track => track.stop());
 
-      ["Nhìn thẳng", "Quay phải", "Quay trái"].forEach(pos => {
-        const img = document.getElementById(`preview_${pos}`);
+      // Dùng keys gọn để reset ảnh preview
+      const imageKeys = ["front", "right", "left"];
+      imageKeys.forEach(key => {
+        const img = document.getElementById(`preview_${key}`);
         if (img) img.src = "";
       });
 
@@ -103,7 +105,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 
 // =============================
-// ✅ Quét khuôn mặt 3 góc (front, left, right)
+// ✅ Quét khuôn mặt 3 góc (front, right, left) – hiển thị tiếng Việt, lưu key gọn
 // =============================
 window.startMotionFaceCapture = async function (videoId, canvasId) {
   await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
@@ -123,13 +125,19 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
   });
 
   const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 });
-  const steps = ["Nhìn thẳng", "Quay phải", "Quay trái"];
+
+  // Rút gọn keys nhưng hiển thị vẫn rõ ràng
+  const steps = [
+    { key: "front", label: "Nhìn thẳng" },
+    { key: "right", label: "Quay phải" },
+    { key: "left", label: "Quay trái" }
+  ];
+
   const images = {};
   let currentStep = 0;
   let captureCooldown = 0;
-
   let readyFrames = 0;
-  const REQUIRED_FRAMES = 35; // ~2 giây nếu 60fps
+  const REQUIRED_FRAMES = 35;
 
   const loop = async () => {
     const detections = await faceapi
@@ -153,17 +161,17 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
       const eyesMidX = (eyeL + eyeR) / 2;
       const offset = noseX - eyesMidX;
 
-      const expected = steps[currentStep];
+      const { key, label } = steps[currentStep];
       let ok = false;
 
-      if (expected === "Nhìn thẳng" && Math.abs(offset) < 10) ok = true;
-      if (expected === "Quay phải" && offset < -20) ok = true;
-      if (expected === "Quay trái" && offset > 20) ok = true;
+      if (key === "front" && Math.abs(offset) < 10) ok = true;
+      if (key === "right" && offset < -20) ok = true;
+      if (key === "left" && offset > 20) ok = true;
 
       if (ok) {
         readyFrames++;
         if (msgEl) {
-          msgEl.textContent = `👉 Bước ${currentStep + 1}/3: ${expected.toUpperCase()} ✅ (${readyFrames}/${REQUIRED_FRAMES})`;
+          msgEl.textContent = `👉 Bước ${currentStep + 1}/3: ${label.toUpperCase()} ✅ (${readyFrames}/${REQUIRED_FRAMES})`;
         }
 
         if (readyFrames >= REQUIRED_FRAMES && captureCooldown === 0) {
@@ -171,22 +179,12 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
           cropCanvas.width = box.width;
           cropCanvas.height = box.height;
           const cropCtx = cropCanvas.getContext("2d");
-          cropCtx.drawImage(
-            video,
-            box.x,
-            box.y,
-            box.width,
-            box.height,
-            0,
-            0,
-            box.width,
-            box.height
-          );
+          cropCtx.drawImage(video, box.x, box.y, box.width, box.height, 0, 0, box.width, box.height);
 
-          images[expected] = cropCanvas.toDataURL("image/jpeg");
+          images[key] = cropCanvas.toDataURL("image/jpeg");
 
-          const imgEl = document.getElementById(`preview_${expected}`);
-          if (imgEl) imgEl.src = images[expected];
+          const imgEl = document.getElementById(`preview_${key}`);
+          if (imgEl) imgEl.src = images[key];
 
           currentStep++;
           captureCooldown = 60;
@@ -203,7 +201,7 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
       } else {
         readyFrames = 0;
         if (msgEl)
-          msgEl.textContent = `👉 Bước ${currentStep + 1}/3: ${expected.toUpperCase()} ❌`;
+          msgEl.textContent = `👉 Bước ${currentStep + 1}/3: ${label.toUpperCase()} ❌`;
       }
     } else {
       readyFrames = 0;
@@ -219,7 +217,6 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
     loop();
   });
 };
-
 
 window.submitMotionRegister = async function () {
   const msg = document.getElementById("msg");
