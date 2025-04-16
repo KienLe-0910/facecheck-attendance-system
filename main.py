@@ -67,3 +67,7 @@ async def admin_page(request: Request):
 @app.get("/info.html", response_class=HTMLResponse)
 async def info_page(request: Request):
     return templates.TemplateResponse("info.html", {"request": request})
+
+@app.get("/biometric.html", response_class=HTMLResponse)
+def biometric_page(request: Request):
+    return templates.TemplateResponse("biometric.html", {"request": request})
