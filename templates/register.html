@@ -1,49 +1,32 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Đăng ký người dùng</title>
+  <meta charset="UTF-8" />
+  <title>Đăng ký tài khoản</title>
   <link rel="stylesheet" href="/static/style.css" />
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-  <script defer src="/static/script.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+  <script src="/static/script.js" defer></script>
 </head>
 <body>
   <div class="container">
-    <h2>📝 Đăng ký người dùng mới</h2>
+    <!-- Cột phải: form đăng ký -->
+    <div class="login-right">
+      <div class="card">
+        <h2>📝 Đăng ký</h2>
 
-    <!-- Form nhập thông tin -->
-    <form id="infoForm">
-      <input type="text" id="student_id" name="student_id" placeholder="Mã người dùng" required />
-      <input type="text" id="name" name="name" placeholder="Họ và tên" required />
-      <input type="password" id="password" name="password" placeholder="Mật khẩu" required />
-      <input type="text" id="phone_number" name="phone_number" placeholder="Số điện thoại" required />
-    </form>
+        <form id="registerForm">
+          <input type="text" id="user_id" placeholder="Mã người dùng" required />
+          <input type="text" id="name" placeholder="Họ và tên" required />
+          <input type="password" id="password" placeholder="Mật khẩu" required />
+          <input type="text" id="phone_number" placeholder="Số điện thoại" required />
+          <input type="email" id="email" placeholder="Email" required />
+          <button type="submit">➡️ Tiếp tục quét khuôn mặt</button>
+        </form>
 
-    <!-- Camera và hướng dẫn -->
-    <h3 style="margin-top: 2rem;">📸 Quét khuôn mặt 3 góc</h3>
-    <div style="position: relative; display: inline-block;">
-      <video id="camera" autoplay muted playsinline style="border-radius: 10px;"></video>
-      <canvas id="overlay" style="position:absolute; top:0; left:0;"></canvas>
+        <p id="registerMsg" style="margin-top: 1rem;"></p>
+        <a href="/login.html" class="link-button" style="margin-top: 1rem;">⬅️ Quay lại đăng nhập</a>
+      </div>
     </div>
-
-    <p id="faceStepMsg" style="margin-top: 1rem;"></p>
-    <button onclick="startMotionFaceCapture('camera', 'overlay')">🚀 Bắt đầu quét khuôn mặt</button>
-
-    <!-- Hiển thị ảnh preview -->
-    <div style="margin-top: 1.5rem;">
-      <h4>🖼️ Ảnh đã chụp:</h4>
-      <img id="preview_front" style="width: 150px; margin-right: 1rem;" />
-      <img id="preview_left" style="width: 150px; margin-right: 1rem;" />
-      <img id="preview_right" style="width: 150px;" />
-    </div>
-
-    <button id="resetCaptureBtn" style="margin-top: 1rem;">🔁 Chụp lại</button>
-
-    <!-- Nút xác nhận -->
-    <button onclick="submitMotionRegister()" style="margin-top: 2rem;">✅ Xác nhận & đăng ký</button>
-    <p id="msg" style="margin-top: 1rem;"></p>
-
-    <button style="margin-top: 1rem;" onclick="window.location.href='/login.html'">⬅️ Quay lại đăng nhập</button>
   </div>
 </body>
 </html>
