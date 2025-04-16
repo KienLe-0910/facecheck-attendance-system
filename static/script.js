@@ -63,7 +63,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       const stream = video?.srcObject;
       if (stream) stream.getTracks().forEach(track => track.stop());
 
-      ["front", "left", "right"].forEach(pos => {
+      ["Nhìn thẳng", "Quay phải", "Quay trái"].forEach(pos => {
         const img = document.getElementById(`preview_${pos}`);
         if (img) img.src = "";
       });
@@ -123,7 +123,7 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
   });
 
   const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 });
-  const steps = ["front", "left", "right"];
+  const steps = ["Nhìn thẳng", "Quay phải", "Quay trái"];
   const images = {};
   let currentStep = 0;
   let captureCooldown = 0;
@@ -156,9 +156,9 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
       const expected = steps[currentStep];
       let ok = false;
 
-      if (expected === "front" && Math.abs(offset) < 10) ok = true;
-      if (expected === "left" && offset < -20) ok = true;
-      if (expected === "right" && offset > 20) ok = true;
+      if (expected === "Nhìn thẳng" && Math.abs(offset) < 10) ok = true;
+      if (expected === "Quay phải" && offset < -20) ok = true;
+      if (expected === "Quay trái" && offset > 20) ok = true;
 
       if (ok) {
         readyFrames++;
@@ -193,7 +193,7 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
           readyFrames = 0;
 
           if (currentStep >= steps.length) {
-            if (msgEl) msgEl.textContent = "✅ Đã hoàn tất chụp 3 góc!";
+            if (msgEl) msgEl.textContent = "✅ Đã hoàn tất xác thực khuôn mặt";
             video.pause();
             stream.getTracks().forEach(t => t.stop());
             window.motionImages = images;
