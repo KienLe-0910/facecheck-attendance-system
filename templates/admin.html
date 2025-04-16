@@ -2,43 +2,93 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <title>Trang quản trị - Tạo và quản lý giảng viên</title>
+  <title>Trang quản trị</title>
   <link rel="stylesheet" href="/static/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet"/>
   <script src="/static/script.js" defer></script>
 </head>
 <body>
-  <div class="container">
-    <h1>👨‍💼 Xin chào, <span id="admin-name">Admin</span></h1>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>🔧 Quản trị</h2>
+      <ul>
+        <li><a href="#" class="active" data-section="create" onclick="showSection('create')">➕ Tạo tài khoản</a></li>
+        <li><a href="#" data-section="list" onclick="showSection('list')">📋 Danh sách giảng viên</a></li>
+        <li><a href="#" class="logout-button" onclick="logout()">🚪 Đăng xuất</a></li>
+      </ul>
+    </div>
 
-    <!-- TẠO TÀI KHOẢN GIẢNG VIÊN -->
-    <section>
-      <h2>➕ Tạo tài khoản giảng viên</h2>
-      <form id="create-teacher-form">
-        <label for="user_id">Mã giảng viên:</label><br />
-        <input type="text" id="user_id" required /><br /><br />
+    <!-- Main content -->
+    <div class="main-content">
+      <h1>👨‍💼 Xin chào, <span id="admin-name">Admin</span></h1>
 
-        <label for="name">Họ tên:</label><br />
-        <input type="text" id="name" required /><br /><br />
+      <!-- Tạo tài khoản -->
+      <section id="section-create">
+        <form id="create-teacher-form">
+          <label for="user_id">Mã giảng viên:</label><br />
+          <input type="text" id="user_id" required /><br />
 
-        <label for="password">Mật khẩu:</label><br />
-        <input type="password" id="password" required /><br /><br />
+          <label for="name">Họ tên:</label><br />
+          <input type="text" id="name" required /><br />
 
-        <button type="submit">Tạo tài khoản</button>
-      </form>
-      <p id="message" style="margin-top: 20px; font-weight: bold;"></p>
-    </section>
+          <label for="phone_number">Số điện thoại:</label><br />
+          <input type="phone_number" id="phone_number" required /><br />
 
-    <hr><br>
+          <label for="email">Email:</label><br />
+          <input type="email" id="email" required /><br />
 
-    <!-- XEM DANH SÁCH GIẢNG VIÊN -->
-    <section>
-      <h2>📋 Danh sách giảng viên</h2>
-      <button id="load-teachers">🔄 Tải danh sách</button>
-      <div id="teachers-list" style="margin-top: 20px;"></div>
-    </section>
+          <label for="password">Mật khẩu:</label><br />
+          <input type="password" id="password" required /><br />
 
-    <br>
-    <button id="logout-btn">🚪 Đăng xuất</button>
+          <button type="submit">Tạo tài khoản</button>
+        </form>
+        <p id="message" style="margin-top: 10px; font-weight: bold;"></p>
+      </section>
+
+      <!-- Danh sách giảng viên -->
+      <section id="section-list" style="display: none;">
+        <button id="load-teachers">🔄 Tải danh sách</button>
+        <div id="teachers-list" style="margin-top: 20px;">
+          <table class="teacher-table">
+            <thead>
+              <tr>
+                <th>Mã GV</th>
+                <th>Họ tên</th>
+                <th>SĐT</th>
+                <th>Email</th>
+                <th>Ngày tạo</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody id="teacher-table-body">
+              <!-- JS sẽ chèn dữ liệu vào đây -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   </div>
+
+  <!-- Script chuyển section và xử lý active -->
+  <script>
+    function showSection(section) {
+      // 1. Ẩn tất cả sections
+      document.getElementById('section-create').style.display = 'none';
+      document.getElementById('section-list').style.display = 'none';
+
+      // 2. Hiện section được chọn
+      if (section === 'create') {
+        document.getElementById('section-create').style.display = 'block';
+      } else if (section === 'list') {
+        document.getElementById('section-list').style.display = 'block';
+      }
+
+      // 3. Đổi màu active menu
+      document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+      const targetLink = document.querySelector(`.sidebar a[data-section="${section}"]`);
+      if (targetLink) targetLink.classList.add('active');
+    }
+  </script>
 </body>
 </html>
