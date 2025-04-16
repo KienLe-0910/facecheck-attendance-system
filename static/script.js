@@ -221,19 +221,20 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
 };
 
 
-// GỬI LÊN BACKEND
 window.submitMotionRegister = async function () {
-  const user_id = document.getElementById("student_id")?.value.trim();
-  const name = document.getElementById("name")?.value.trim();
-  const password = document.getElementById("password")?.value;
-  const phone_number = document.getElementById("phone_number")?.value.trim();
   const msg = document.getElementById("msg");
 
-  if (!user_id || !name || !password || !phone_number) {
-    showMessage("msg", "⚠️ Vui lòng nhập đầy đủ thông tin!", false);
+  // Lấy dữ liệu từ localStorage
+  const infoRaw = localStorage.getItem("register_info");
+  if (!infoRaw) {
+    showMessage("msg", "⚠️ Không tìm thấy thông tin đăng ký! Vui lòng quay lại bước trước.", false);
     return;
   }
 
+  const info = JSON.parse(infoRaw);
+  const { user_id, name, password, phone_number, email } = info;
+
+  // Kiểm tra ảnh khuôn mặt
   if (!window.motionImages || !window.motionImages.front || !window.motionImages.left || !window.motionImages.right) {
     showMessage("msg", "⚠️ Bạn chưa hoàn tất đăng ký khuôn mặt 3 hướng!", false);
     return;
@@ -244,6 +245,7 @@ window.submitMotionRegister = async function () {
     name,
     password,
     phone_number,
+    email,
     role: "student",
     image_front: window.motionImages.front,
     image_left: window.motionImages.left,
@@ -254,6 +256,7 @@ window.submitMotionRegister = async function () {
     const res = await postJSON("/register", data);
     if (res.success) {
       showMessage("msg", res.message || "✅ Đăng ký thành công!", true);
+      localStorage.removeItem("register_info"); // xoá dữ liệu tạm
       setTimeout(() => window.location.href = "/login.html", 2000);
     } else {
       showMessage("msg", res.message || "❌ Lỗi đăng ký!", false);
@@ -263,6 +266,7 @@ window.submitMotionRegister = async function () {
     console.error(err);
   }
 };
+
 
 // ✅ Gửi điểm danh bằng 3 ảnh
 window.submitMotionAttendance = async function () {
@@ -401,6 +405,32 @@ if (loginForm) {
 // ✅ Đăng ký tài khoản (register.html)
 // =============================
 
+// ========== XỬ LÝ ĐĂNG KÝ (STEP 1) ==========
+const registerForm = document.getElementById("registerForm");
+if (registerForm) {
+  registerForm.onsubmit = (e) => {
+    e.preventDefault();
+
+    const user_id = document.getElementById("user_id").value.trim();
+    const name = document.getElementById("name").value.trim();
+    const password = document.getElementById("password").value;
+    const phone_number = document.getElementById("phone_number").value.trim();
+    const email = document.getElementById("email").value.trim();
+
+    if (!user_id || !name || !password || !phone_number || !email) {
+      showMessage("registerMsg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
+      return;
+    }
+
+    // Lưu thông tin tạm vào localStorage
+    localStorage.setItem("register_info", JSON.stringify({
+      user_id, name, password, phone_number, email
+    }));
+
+    // Chuyển sang trang biometric
+    window.location.href = "/biometric.html";
+  };
+}
 
 // =============================
 // ✅ Quản lý admin (admin.html)
