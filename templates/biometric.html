@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Quét khuôn mặt</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script defer src="/static/script.js"></script>
+</head>
+<body>
+  <div class="login-container">
+    <!-- Cột giữa: chỉ dùng card trắng -->
+    <div class="biometric-card">
+      <h2>📸 Xác thực khuôn mặt 3 góc</h2>
+
+      <!-- Camera & overlay -->
+      <div class="camera-wrapper">
+        <video id="camera" autoplay muted playsinline></video>
+        <canvas id="overlay"></canvas>
+      </div>
+
+      <p id="faceStepMsg" style="margin-top: 1rem;"></p>
+      <button onclick="startMotionFaceCapture('camera', 'overlay')">🚀 Bắt đầu quét khuôn mặt</button>
+
+      <!-- Ảnh preview -->
+      <div style="margin-top: 1.5rem;">
+        <h4>🖼️ Ảnh đã chụp:</h4>
+        <img id="preview_front" class="preview-img" />
+        <img id="preview_left" class="preview-img" />
+        <img id="preview_right" class="preview-img" />
+      </div>
+
+      <button id="resetCaptureBtn" style="margin-top: 1rem;">🔁 Chụp lại</button>
+
+      <!-- Xác nhận -->
+      <button onclick="submitMotionRegister()" style="margin-top: 2rem;">✅ Xác nhận & đăng ký</button>
+      <p id="msg" style="margin-top: 1rem;"></p>
+
+      <button style="margin-top: 1rem;" onclick="window.location.href='/register.html'">⬅️ Quay lại sửa thông tin</button>
+    </div>
+  </div>
+</body>
+</html>
