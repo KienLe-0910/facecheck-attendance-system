@@ -15,6 +15,8 @@ def get_current_vietnam_time():
 class CreateTeacherRequest(BaseModel):
     user_id: str
     name: str
+    phone_number: str
+    email: str
     password: str
 
 # --------- API tạo tài khoản giảng viên ---------
@@ -31,9 +33,9 @@ def create_teacher(user_data: CreateTeacherRequest):
         now = get_current_vietnam_time()
 
         cursor.execute("""
-            INSERT INTO users (user_id, name, password, role, created_at)
-            VALUES (?, ?, ?, ?, ?)
-        """, (user_data.user_id, user_data.name, hashed_pw, "teacher", now))
+            INSERT INTO users (user_id, name, phone_number, email, password, role, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (user_data.user_id, user_data.name, user_data.phone_number, user_data.email, hashed_pw, "teacher", now))
         conn.commit()
 
         return {"success": True, "message": "✅ Đã tạo tài khoản giảng viên!"}
@@ -49,12 +51,12 @@ def get_all_teachers():
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT user_id, name, created_at FROM users WHERE role = 'teacher'")
+        cursor.execute("SELECT user_id, name, phone_number, email, created_at FROM users WHERE role = 'teacher'")
         teachers = cursor.fetchall()
         return {
             "success": True,
             "data": [
-                {"user_id": row["user_id"], "name": row["name"], "created_at": row["created_at"]}
+                {"user_id": row["user_id"], "name": row["name"], "phone_number": row["phone_number"], "email": row["email"], "created_at": row["created_at"]}
                 for row in teachers
             ]
         }
