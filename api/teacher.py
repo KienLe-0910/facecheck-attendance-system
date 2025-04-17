@@ -15,15 +15,15 @@ class SessionCreate(BaseModel):
 
 # 📌 API: Tạo lớp học phần mới
 @router.post("/create_class")
-def create_class(class_id: str, class_name: str, teacher_id: str):
+def create_class(class_id: str, class_name: str, teacher_id: str, class_key: str):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         created_at = datetime.now(pytz.timezone("Asia/Ho_Chi_Minh")).strftime("%Y-%m-%d %H:%M:%S")
         cursor.execute("""
-            INSERT INTO classes (class_id, class_name, teacher_id, created_at)
-            VALUES (?, ?, ?, ?)""",
-            (class_id, class_name, teacher_id, created_at)
+            INSERT INTO classes (class_id, class_name, teacher_id, class_key, created_at)
+            VALUES (?, ?, ?, ?, ?)""",
+            (class_id, class_name, teacher_id, class_key, created_at)
         )
         conn.commit()
         return {"success": True, "message": "✅ Lớp học phần được tạo thành công!"}
@@ -59,7 +59,7 @@ def get_classes_by_teacher(teacher_id: str):
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            SELECT class_id, class_name FROM classes
+            SELECT class_id, class_name, created_at FROM classes
             WHERE teacher_id = ?
             ORDER BY class_id ASC
         """, (teacher_id,))
