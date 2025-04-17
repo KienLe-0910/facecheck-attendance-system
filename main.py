@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 # Import các router
-from api import enrollment, register, login, attendance, teacher, student, admin, info
+from api import register, login, attendance, teacher, student, admin, info
 
 # Tạo FastAPI app
 app = FastAPI(title="Hệ thống điểm danh bằng khuôn mặt")
@@ -20,7 +20,6 @@ app.include_router(register.router)
 app.include_router(login.router)
 app.include_router(attendance.router)
 app.include_router(teacher.router)
-app.include_router(enrollment.router)
 app.include_router(student.router)
 app.include_router(admin.router)
 app.include_router(info.router)
