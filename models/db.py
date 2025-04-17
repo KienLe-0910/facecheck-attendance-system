@@ -40,6 +40,7 @@ def init_db():
             class_id TEXT UNIQUE NOT NULL,
             class_name TEXT NOT NULL,
             teacher_id TEXT NOT NULL,
+            class_key TEXT,
             created_at TEXT
         )''')
 
