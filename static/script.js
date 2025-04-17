@@ -63,10 +63,8 @@ window.addEventListener("DOMContentLoaded", async () => {
       const stream = video?.srcObject;
       if (stream) stream.getTracks().forEach(track => track.stop());
 
-      // Dùng keys gọn để reset ảnh preview
-      const imageKeys = ["front", "right", "left"];
-      imageKeys.forEach(key => {
-        const img = document.getElementById(`preview_${key}`);
+      ["front", "left", "right"].forEach(pos => {
+        const img = document.getElementById(`preview_${pos}`);
         if (img) img.src = "";
       });
 
@@ -105,7 +103,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 
 // =============================
-// ✅ Quét khuôn mặt 3 góc (front, right, left) – hiển thị tiếng Việt, lưu key gọn
+// ✅ Quét khuôn mặt 3 góc (front, left, right)
 // =============================
 window.startMotionFaceCapture = async function (videoId, canvasId) {
   await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
@@ -124,20 +122,14 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
     canvas.height = video.videoHeight;
   });
 
-  const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 });
-
-  // Rút gọn keys nhưng hiển thị vẫn rõ ràng
-  const steps = [
-    { key: "front", label: "Nhìn thẳng" },
-    { key: "right", label: "Quay phải" },
-    { key: "left", label: "Quay trái" }
-  ];
-
+  const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+  const steps = ["front", "left", "right"];
   const images = {};
   let currentStep = 0;
   let captureCooldown = 0;
+
   let readyFrames = 0;
-  const REQUIRED_FRAMES = 35;
+  const REQUIRED_FRAMES = 35; // ~2 giây nếu 60fps
 
   const loop = async () => {
     const detections = await faceapi
@@ -161,17 +153,17 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
       const eyesMidX = (eyeL + eyeR) / 2;
       const offset = noseX - eyesMidX;
 
-      const { key, label } = steps[currentStep];
+      const expected = steps[currentStep];
       let ok = false;
 
-      if (key === "front" && Math.abs(offset) < 10) ok = true;
-      if (key === "right" && offset < -20) ok = true;
-      if (key === "left" && offset > 20) ok = true;
+      if (expected === "front" && Math.abs(offset) < 10) ok = true;
+      if (expected === "left" && offset < -20) ok = true;
+      if (expected === "right" && offset > 20) ok = true;
 
       if (ok) {
         readyFrames++;
         if (msgEl) {
-          msgEl.textContent = `👉 Bước ${currentStep + 1}/3: ${label.toUpperCase()} ✅ (${readyFrames}/${REQUIRED_FRAMES})`;
+          msgEl.textContent = `👉 Bước ${currentStep + 1}/3: ${expected.toUpperCase()} ✅ (${readyFrames}/${REQUIRED_FRAMES})`;
         }
 
         if (readyFrames >= REQUIRED_FRAMES && captureCooldown === 0) {
@@ -179,19 +171,29 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
           cropCanvas.width = box.width;
           cropCanvas.height = box.height;
           const cropCtx = cropCanvas.getContext("2d");
-          cropCtx.drawImage(video, box.x, box.y, box.width, box.height, 0, 0, box.width, box.height);
+          cropCtx.drawImage(
+            video,
+            box.x,
+            box.y,
+            box.width,
+            box.height,
+            0,
+            0,
+            box.width,
+            box.height
+          );
 
-          images[key] = cropCanvas.toDataURL("image/jpeg");
+          images[expected] = cropCanvas.toDataURL("image/jpeg");
 
-          const imgEl = document.getElementById(`preview_${key}`);
-          if (imgEl) imgEl.src = images[key];
+          const imgEl = document.getElementById(`preview_${expected}`);
+          if (imgEl) imgEl.src = images[expected];
 
           currentStep++;
           captureCooldown = 60;
           readyFrames = 0;
 
           if (currentStep >= steps.length) {
-            if (msgEl) msgEl.textContent = "✅ Đã hoàn tất xác thực khuôn mặt";
+            if (msgEl) msgEl.textContent = "✅ Đã hoàn tất chụp 3 góc!";
             video.pause();
             stream.getTracks().forEach(t => t.stop());
             window.motionImages = images;
@@ -201,7 +203,7 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
       } else {
         readyFrames = 0;
         if (msgEl)
-          msgEl.textContent = `👉 Bước ${currentStep + 1}/3: ${label.toUpperCase()} ❌`;
+          msgEl.textContent = `👉 Bước ${currentStep + 1}/3: ${expected.toUpperCase()} ❌`;
       }
     } else {
       readyFrames = 0;
@@ -218,20 +220,20 @@ window.startMotionFaceCapture = async function (videoId, canvasId) {
   });
 };
 
+
+// GỬI LÊN BACKEND
 window.submitMotionRegister = async function () {
+  const user_id = document.getElementById("student_id")?.value.trim();
+  const name = document.getElementById("name")?.value.trim();
+  const password = document.getElementById("password")?.value;
+  const phone_number = document.getElementById("phone_number")?.value.trim();
   const msg = document.getElementById("msg");
 
-  // Lấy dữ liệu từ localStorage
-  const infoRaw = localStorage.getItem("register_info");
-  if (!infoRaw) {
-    showMessage("msg", "⚠️ Không tìm thấy thông tin đăng ký! Vui lòng quay lại bước trước.", false);
+  if (!user_id || !name || !password || !phone_number) {
+    showMessage("msg", "⚠️ Vui lòng nhập đầy đủ thông tin!", false);
     return;
   }
 
-  const info = JSON.parse(infoRaw);
-  const { user_id, name, password, phone_number, email } = info;
-
-  // Kiểm tra ảnh khuôn mặt
   if (!window.motionImages || !window.motionImages.front || !window.motionImages.left || !window.motionImages.right) {
     showMessage("msg", "⚠️ Bạn chưa hoàn tất đăng ký khuôn mặt 3 hướng!", false);
     return;
@@ -242,7 +244,6 @@ window.submitMotionRegister = async function () {
     name,
     password,
     phone_number,
-    email,
     role: "student",
     image_front: window.motionImages.front,
     image_left: window.motionImages.left,
@@ -253,7 +254,6 @@ window.submitMotionRegister = async function () {
     const res = await postJSON("/register", data);
     if (res.success) {
       showMessage("msg", res.message || "✅ Đăng ký thành công!", true);
-      localStorage.removeItem("register_info"); // xoá dữ liệu tạm
       setTimeout(() => window.location.href = "/login.html", 2000);
     } else {
       showMessage("msg", res.message || "❌ Lỗi đăng ký!", false);
@@ -263,7 +263,6 @@ window.submitMotionRegister = async function () {
     console.error(err);
   }
 };
-
 
 // ✅ Gửi điểm danh bằng 3 ảnh
 window.submitMotionAttendance = async function () {
@@ -402,32 +401,6 @@ if (loginForm) {
 // ✅ Đăng ký tài khoản (register.html)
 // =============================
 
-// ========== XỬ LÝ ĐĂNG KÝ (STEP 1) ==========
-const registerForm = document.getElementById("registerForm");
-if (registerForm) {
-  registerForm.onsubmit = (e) => {
-    e.preventDefault();
-
-    const user_id = document.getElementById("user_id").value.trim();
-    const name = document.getElementById("name").value.trim();
-    const password = document.getElementById("password").value;
-    const phone_number = document.getElementById("phone_number").value.trim();
-    const email = document.getElementById("email").value.trim();
-
-    if (!user_id || !name || !password || !phone_number || !email) {
-      showMessage("registerMsg", "⚠ Vui lòng nhập đầy đủ thông tin.", false);
-      return;
-    }
-
-    // Lưu thông tin tạm vào localStorage
-    localStorage.setItem("register_info", JSON.stringify({
-      user_id, name, password, phone_number, email
-    }));
-
-    // Chuyển sang trang biometric
-    window.location.href = "/biometric.html";
-  };
-}
 
 // =============================
 // ✅ Quản lý admin (admin.html)
@@ -547,7 +520,7 @@ if (window.location.pathname.endsWith("teacher.html")) {
 
   let allClasses = [];
 
-  // Tạo lớp học
+  // Tạo lớp học phần
   document.getElementById("createClassForm").onsubmit = async (e) => {
     e.preventDefault();
     const class_id = document.getElementById("class_id").value.trim();
@@ -566,50 +539,41 @@ if (window.location.pathname.endsWith("teacher.html")) {
     }
   };
 
-  // Tạo phiên điểm danh
-  document.getElementById("createSessionForm").onsubmit = async (e) => {
-    e.preventDefault();
-  
-    const class_id = document.getElementById("session_class_id").value;
-    const start_time = document.getElementById("start_time").value;
-    const end_time = document.getElementById("end_time").value;
-  
-    if (!class_id) {
-      showMessage("sessionMsg", "⚠ Vui lòng chọn lớp học phần trước khi tạo phiên!", false);
-      return;
-    }
-  
-    if (!start_time || !end_time) {
-      showMessage("sessionMsg", "⚠ Vui lòng nhập thời gian bắt đầu và kết thúc!", false);
-      return;
-    }
-  
-    const res = await fetch("/create_session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ class_id, start_time, end_time })
-    });
-  
-    const result = await res.json();
-    showMessage("sessionMsg", result.message || result.detail, result.success !== false);
-    if (result.success) {
-      document.getElementById("createSessionForm").reset();
-    }
-  };
-  
-  // Tải danh sách lớp học
-  async function loadClasses() {
+  // Hiển thị danh sách lớp học phần dạng card thông minh
+  window.loadClasses = async function () {
     const res = await fetch(`/get_classes_by_teacher?teacher_id=${user_id}`);
     const result = await res.json();
     const div = document.getElementById("classList");
 
     if (result.success) {
       allClasses = result.data;
-      renderClassList(allClasses);
+      div.innerHTML = result.data.map(cls => `
+        <div class="class-card">
+          <div class="class-header">
+            <div>
+              <h3>📘 ${cls.class_name}</h3>
+              <p><strong>Mã lớp:</strong> ${cls.class_id} | <strong>Ngày tạo:</strong> ${cls.created_at}</p>
+            </div>
+            <div class="class-actions">
+              <button onclick="showSessionForm('${cls.class_id}')">➕ Tạo phiên</button>
+              <button onclick="loadSessions('${cls.class_id}')">📜 Xem phiên</button>
+              <button onclick="viewStudents('${cls.class_id}')">👨‍🎓 Xem SV</button>
+              <button onclick="editClass('${cls.class_id}')">✏️ Sửa</button>
+              <button onclick="deleteClass('${cls.class_id}')">❌ Xoá</button>
+            </div>
+          </div>
 
-      const select = document.getElementById("session_class_id");
-      select.innerHTML = `<option value="">-- Chọn lớp học phần --</option>` +
-        result.data.map(cls => `<option value="${cls.class_id}">${cls.class_id} - ${cls.class_name}</option>`).join("");
+          <div class="create-session-form" id="session-form-${cls.class_id}" style="display:none; margin-top:10px;">
+            <input type="datetime-local" class="start" required />
+            <input type="datetime-local" class="end" required />
+            <button onclick="submitSession('${cls.class_id}')">✅ Tạo</button>
+            <p class="session-msg"></p>
+          </div>
+
+          <div class="session-list" id="session-list-${cls.class_id}" style="margin-top: 1rem;"></div>
+          <div class="student-list" id="student-list-${cls.class_id}" style="margin-top: 1rem;"></div>
+        </div>
+      `).join("");
 
       updateClassDropdown(allClasses);
     } else {
@@ -617,40 +581,100 @@ if (window.location.pathname.endsWith("teacher.html")) {
     }
   }
 
-  // Render danh sách lớp học
-  function renderClassList(classList) {
-    const div = document.getElementById("classList");
-    if (classList.length === 0) {
-      div.innerHTML = "<p>Không có lớp học phần nào.</p>";
+  window.showSessionForm = function (class_id) {
+    const form = document.getElementById(`session-form-${class_id}`);
+    if (form) form.style.display = (form.style.display === "none") ? "block" : "none";
+  }
+
+  window.submitSession = async function (class_id) {
+    const form = document.getElementById(`session-form-${class_id}`);
+    const startInput = form.querySelector(".start");
+    const endInput = form.querySelector(".end");
+    const msg = form.querySelector(".session-msg");
+
+    const start_time = startInput.value;
+    const end_time = endInput.value;
+    if (!start_time || !end_time) {
+      msg.textContent = "⚠️ Vui lòng nhập đủ thời gian!";
       return;
     }
 
-    const html = classList.map(cls => `
-      <div class="class-item">
-        <strong>${cls.class_id}</strong> - <span id="name-${cls.class_id}">${cls.class_name}</span>
-        <button onclick="editClass('${cls.class_id}')">✏️ Sửa</button>
-        <button onclick="deleteClass('${cls.class_id}')">❌ Xoá</button>
-      </div>
-    `).join("");
-
-    div.innerHTML = html;
+    const res = await postJSON("/create_session", { class_id, start_time, end_time });
+    msg.textContent = res.message || (res.success ? "✅ Tạo phiên thành công" : "❌ Lỗi");
+    if (res.success) {
+      startInput.value = "";
+      endInput.value = "";
+      loadSessions(class_id);
+    }
   }
 
-  window.loadClasses = loadClasses;
+  window.loadSessions = async function (class_id) {
+    // Ẩn tất cả danh sách sinh viên đang hiển thị
+    document.querySelectorAll(".student-list").forEach(el => el.innerHTML = "");
+    document.querySelectorAll(".session-list").forEach(el => el.innerHTML = "");
+  
+    const list = document.getElementById(`session-list-${class_id}`);
+    if (!list) return;
+    list.innerHTML = "⏳ Đang tải...";
+  
+    const res = await fetch(`/get_sessions?class_id=${class_id}`);
+    const result = await res.json();
+  
+    if (!result.success || !result.data.length) {
+      list.innerHTML = "<p>⚠ Chưa có phiên nào.</p>";
+      return;
+    }
+  
+    list.innerHTML = "<ul>" + result.data.map(s => `
+      <li>🕒 ${s.start_time} → ${s.end_time}</li>
+    `).join("") + "</ul>";
+  };
+  
 
-  // Xoá lớp học
+  window.viewStudents = async function (class_id) {
+    // Ẩn tất cả các vùng session-list khác
+    document.querySelectorAll(".session-list").forEach(el => el.innerHTML = "");
+    document.querySelectorAll(".student-list").forEach(el => el.innerHTML = "");
+  
+    const list = document.getElementById(`student-list-${class_id}`);
+    if (!list) return;
+    list.innerHTML = "⏳ Đang tải sinh viên...";
+  
+    const res = await fetch(`/teacher/students?class_id=${class_id}`);
+    const result = await res.json();
+  
+    if (!result.success || !result.data.length) {
+      list.innerHTML = "<p>⚠ Không có sinh viên nào.</p>";
+      return;
+    }
+  
+    list.innerHTML = `
+      <table>
+        <thead><tr><th>Mã SV</th><th>Họ tên</th><th>SĐT</th></tr></thead>
+        <tbody>
+          ${result.data.map(sv => `
+            <tr>
+              <td>${sv.user_id}</td>
+              <td>${sv.name}</td>
+              <td>${sv.phone_number || "-"}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  };
+  
+
   window.deleteClass = async function (class_id) {
     if (!confirm(`Bạn có chắc chắn muốn xoá lớp ${class_id}?`)) return;
     const res = await fetch(`/delete_class?class_id=${class_id}`, { method: "DELETE" });
     const result = await res.json();
     showMessage("actionMsg", result.message || result.detail, result.success !== false);
     if (result.success) loadClasses();
-  };
+  }
 
-  // Sửa lớp học
   window.editClass = function (class_id) {
-    const nameSpan = document.getElementById(`name-${class_id}`);
-    const oldName = nameSpan.textContent;
+    const oldName = allClasses.find(c => c.class_id === class_id)?.class_name || "";
     const newName = prompt("Nhập tên lớp mới:", oldName);
     if (newName && newName !== oldName) {
       fetch(`/update_class_name?class_id=${class_id}&class_name=${encodeURIComponent(newName)}`, { method: "PUT" })
@@ -660,26 +684,23 @@ if (window.location.pathname.endsWith("teacher.html")) {
           if (result.success) loadClasses();
         });
     }
-  };
+  }
 
-  // Xem điểm danh theo phiên
+  // === Xem lịch sử điểm danh ===
   const viewClassSelect = document.getElementById("view_class");
   const viewSessionSelect = document.getElementById("view_session");
   const viewBtn = document.getElementById("view_attendance_btn");
   const resultDiv = document.getElementById("attendance_result");
 
-  // Cập nhật dropdown lớp học
   function updateClassDropdown(classes) {
     viewClassSelect.innerHTML = `<option value="">-- Chọn lớp --</option>` +
       classes.map(cls => `<option value="${cls.class_id}">${cls.class_id} - ${cls.class_name}</option>`).join("");
   }
 
-  // Tải phiên điểm danh
   viewClassSelect.onchange = async () => {
     const classId = viewClassSelect.value;
     viewSessionSelect.innerHTML = "<option value=''>-- Đang tải phiên... --</option>";
     resultDiv.innerHTML = "";
-
     if (!classId) return;
 
     const res = await fetch(`/get_sessions?class_id=${classId}`);
@@ -695,27 +716,25 @@ if (window.location.pathname.endsWith("teacher.html")) {
     } else {
       viewSessionSelect.innerHTML = "<option value=''>⚠ Lỗi tải phiên</option>";
     }
-  };
+  }
 
-  // Xem lịch sử điểm danh
   viewBtn.onclick = async () => {
     const sessionId = viewSessionSelect.value;
     const classId = viewClassSelect.value;
     resultDiv.innerHTML = "";
-  
     if (!sessionId || !classId) {
       resultDiv.innerHTML = "<p style='color:red;'>⚠ Vui lòng chọn lớp và phiên điểm danh.</p>";
       return;
     }
-  
+
     const res = await fetch(`/attendance_list_by_session?session_id=${sessionId}&class_id=${classId}`);
     const result = await res.json();
-  
+
     if (!result.success || result.data.length === 0) {
       resultDiv.innerHTML = "<p>⚠ Không có dữ liệu điểm danh.</p>";
       return;
     }
-  
+
     const table = document.createElement("table");
     table.innerHTML = `
       <thead><tr>
@@ -737,8 +756,6 @@ if (window.location.pathname.endsWith("teacher.html")) {
     `;
     resultDiv.appendChild(table);
 
-
-    // Tạo nút xuất file CSV
     const exportBtn = document.createElement("button");
     exportBtn.textContent = "📥 Xuất CSV";
     exportBtn.style.marginTop = "1rem";
@@ -747,10 +764,7 @@ if (window.location.pathname.endsWith("teacher.html")) {
       result.data.forEach(item => {
         rows.push(`${item.user_id},${item.name},${item.created_at},${item.status}`);
       });
-
-      // ⚠ Thêm BOM "\uFEFF" để đảm bảo UTF-8 hiển thị đúng trong Excel
       const csvContent = "\uFEFF" + rows.join("\n");
-
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -760,8 +774,8 @@ if (window.location.pathname.endsWith("teacher.html")) {
       document.body.removeChild(link);
     };
 
-  resultDiv.appendChild(exportBtn);
-  };
+    resultDiv.appendChild(exportBtn);
+  }
 
   loadClasses();
 }
@@ -863,4 +877,51 @@ if (window.location.pathname.endsWith("info.html")) {
     alert(res.message || "Đã cập nhật số điện thoại");
     location.reload();
   };
+}
+
+// =============================
+// ✅ Logic cho enrollment.html
+// =============================
+if (window.location.pathname.endsWith("enrollment.html")) {
+  const { user_id, role } = getCurrentUser();
+
+  if (!user_id || role !== "student") {
+    alert("Bạn chưa đăng nhập với tư cách sinh viên!");
+    window.location.href = "/login.html";
+  }
+
+  const enrollForm = document.getElementById("enrollForm");
+  const classIdInput = document.getElementById("class_id");
+  const classKeyInput = document.getElementById("class_key");
+
+  enrollForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const class_id = classIdInput.value.trim();
+    const class_key = classKeyInput.value.trim();
+
+    if (!class_id || !class_key) {
+      showMessage("msg", "⚠️ Vui lòng nhập đầy đủ mã lớp và key!", false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/enroll_class", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id, class_id, class_key })
+      });
+
+      const data = await res.json();
+      showMessage("msg", data.message || data.detail, data.success !== false);
+
+      if (data.success) {
+        classIdInput.value = "";
+        classKeyInput.value = "";
+      }
+    } catch (err) {
+      showMessage("msg", "❌ Lỗi khi gửi yêu cầu đến server!", false);
+      console.error(err);
+    }
+  });
 }
