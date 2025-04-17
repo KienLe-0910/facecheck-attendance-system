@@ -9,58 +9,16 @@
 <body>
   <div class="container">
     <h2>🧩 Đăng ký lớp học phần</h2>
-    <p>Nhập mã lớp học phần bạn muốn đăng ký vào bên dưới:</p>
+    <p>Nhập mã lớp học phần và key bạn được cung cấp:</p>
 
     <form id="enrollForm">
       <input type="text" name="class_id" id="class_id" placeholder="Mã lớp học phần" autocomplete="off" required><br>
+      <input type="text" name="class_key" id="class_key" placeholder="Mã key lớp học" autocomplete="off" required><br>
       <button type="submit">Đăng ký</button>
     </form>
 
     <p id="msg"></p>
     <button onclick="window.location.href='/student.html'">⬅️ Quay lại</button>
   </div>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const { user_id, role } = getCurrentUser();
-
-      if (!user_id || role !== "student") {
-        alert("Bạn chưa đăng nhập với tư cách sinh viên!");
-        window.location.href = "/login.html";
-        return;
-      }
-
-      const enrollForm = document.getElementById("enrollForm");
-      const input = document.getElementById("class_id");
-
-      enrollForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const class_id = input.value.trim();
-
-        if (!class_id) {
-          showMessage("msg", "⚠️ Vui lòng nhập mã lớp học phần!", false);
-          return;
-        }
-
-        try {
-          const res = await fetch("/enroll_class", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_id, class_id })
-          });
-
-          const data = await res.json();
-          showMessage("msg", data.message || data.detail, data.success !== false);
-
-          if (data.success) {
-            input.value = "";
-          }
-        } catch (err) {
-          showMessage("msg", "❌ Lỗi khi gửi yêu cầu đến server!", false);
-          console.error(err);
-        }
-      });
-    });
-  </script>
 </body>
 </html>
