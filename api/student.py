@@ -10,6 +10,7 @@ router = APIRouter()
 class EnrollRequest(BaseModel):
     user_id: str
     class_id: str
+    class_key: str
 
 # 📌 API: Lấy thông tin người dùng
 @router.get("/student_info")
@@ -62,17 +63,20 @@ def get_attendance_history(user_id: str, class_id: str):
     finally:
         conn.close()
 
-# 📌 API: Đăng ký vào lớp học phần
+# 📌 API: Đăng ký vào lớp học phần (có kiểm tra key)
 @router.post("/enroll_class")
 def enroll_class(req: EnrollRequest):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        print(f"[INFO] Nhận yêu cầu đăng ký: user_id={req.user_id}, class_id={req.class_id}")
-        cursor.execute("SELECT * FROM classes WHERE class_id = ?", (req.class_id,))
-        if not cursor.fetchone():
-            raise HTTPException(status_code=404, detail="❌ Lớp học phần không tồn tại!")
+        print(f"[INFO] Nhận yêu cầu đăng ký: user_id={req.user_id}, class_id={req.class_id}, class_key={req.class_key}")
 
+        # Kiểm tra class_id + class_key có khớp không
+        cursor.execute("SELECT * FROM classes WHERE class_id = ? AND class_key = ?", (req.class_id, req.class_key))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=400, detail="❌ Mã lớp hoặc key không chính xác.")
+
+        # Kiểm tra trùng
         cursor.execute("SELECT * FROM enrollments WHERE user_id = ? AND class_id = ?",
                        (req.user_id, req.class_id))
         if cursor.fetchone():
