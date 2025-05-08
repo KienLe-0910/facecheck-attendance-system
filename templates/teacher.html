@@ -3,64 +3,242 @@
 <head>
   <meta charset="UTF-8">
   <title>Trang Giảng Viên</title>
+  <link rel="icon" href="static/img/neu-logo.png" type="image/x-icon">
   <link rel="stylesheet" href="/static/style.css" />
-  <script defer src="/static/script.js"></script>
+  <script src="/static/js/utils.js" defer></script>
+  <script src="/static/js/teacher.js" defer></script>
 </head>
 <body>
-  <div class="container">
-    <h2>👨‍🏫 Trang Giảng Viên</h2>
-    <div>
-      <p><strong>Chào,</strong> <span id="teacherName">Giảng viên</span></p>
+  <div class="teacher-wrapper">
+    <div class="teacher-layout">
+      <!-- Sidebar -->
+      <div class="teacher-sidebar">
+        <h2>👨‍🏫 Giảng viên</h2>
+        <ul>
+          <li><a href="#" class="active" data-section="dashboard" onclick="showSection('dashboard')">📋 Danh sách lớp học</a></li>
+          <li><a href="#" data-section="create" onclick="showSection('create')">➕ Tạo lớp học</a></li>
+          <li><a href="#" class="teacher-logout" onclick="showModalLogout()">🚪 Đăng xuất</a></li>
+        </ul>
+      </div>
+
+      <!-- Main content -->
+      <div class="teacher-content-scroll">
+      <div class="teacher-main">
+        <h2>Xin chào, <span id="teacherName">Giảng viên</span></h2>
+
+        <!-- Danh sách lớp học -->
+        <section id="section-dashboard">
+          <h3>📋 Danh sách lớp học</h3>
+          <div id="classList"></div>
+        </section>
+
+        <!-- Tạo lớp học -->
+        <section id="section-create" style="display: none;">
+          <h3>➕ Tạo lớp học</h3>
+          <form id="createClassForm">
+            <input type="text" id="class_id" placeholder="Mã lớp học" required />
+            <input type="text" id="class_name" placeholder="Tên lớp học" required />
+            <input type="text" id="class_key" placeholder="Mã đăng ký (class key)" required />
+            <button type="submit">Tạo lớp học</button>
+            <p id="createMsg" style="margin-top: 1rem;"></p>
+          </form>
+        </section>
+
+        <!-- Xem điểm danh -->
+        <section id="section-view" style="display: none;">
+          <h3>📜 Xem điểm danh</h3>
+          <div style="margin-bottom: 1rem;">
+            <label for="view_class">Chọn lớp:</label>
+            <select id="view_class" required>
+              <option value="">-- Chọn lớp --</option>
+            </select>
+          </div>
+          <div style="margin-bottom: 1rem;">
+            <label for="view_session">Chọn phiên điểm danh:</label>
+            <select id="view_session" required>
+              <option value="">-- Chọn phiên --</option>
+            </select>
+          </div>
+          <button id="view_attendance_btn" class="btn-blue">Xem điểm danh</button>
+
+          <div id="attendance_result" style="margin-top: 2rem;">
+            <table id="attendance_table" style="width: 100%; display: none;">
+              <thead>
+                <tr>
+                  <th>Mã SV</th>
+                  <th>Họ tên</th>
+                  <th>Trạng thái</th>
+                  <th>Thời gian</th>
+                </tr>
+              </thead>
+              <tbody id="attendance_table_body"></tbody>
+            </table>
+            <p id="attendance_msg" style="margin-top: 1rem; color: red;"></p>
+          </div>
+        </section>
+      </div>
     </div>
-
-    <!-- Thêm phần quản lý lớp học -->
-    <div id="classList">
-      <h3>Danh sách lớp học</h3>
-      <!-- Các lớp học sẽ được hiển thị ở đây -->
     </div>
-
-    <!-- Form tạo lớp học -->
-    <h3>Tạo lớp học</h3>
-    <form id="createClassForm">
-      <input type="text" id="class_id" placeholder="Mã lớp học" required />
-      <input type="text" id="class_name" placeholder="Tên lớp học" required />
-      <button type="submit">Tạo lớp học</button>
-    </form>
-
-    <!-- Form tạo phiên điểm danh -->
-    <h3>Tạo phiên điểm danh</h3>
-    <form id="createSessionForm">
-      <select id="session_class_id">
-        <option value="">-- Chọn lớp --</option>
-      </select>
-      <input type="datetime-local" id="start_time" required />
-      <input type="datetime-local" id="end_time" required />
-      <button type="submit">Tạo phiên điểm danh</button>
-      <p id="sessionMsg" style="margin-top: 0.5rem;"></p>
-    </form>
-
-    <!-- Xem điểm danh -->
-    <h3>Xem điểm danh</h3>
-    <div>
-      <label for="view_class">Chọn lớp:</label>
-      <select id="view_class">
-        <option value="">-- Chọn lớp --</option>
-      </select>
-    </div>
-
-    <div>
-      <label for="view_session">Chọn phiên điểm danh:</label>
-      <select id="view_session">
-        <option value="">-- Chọn phiên --</option>
-      </select>
-    </div>
-
-    <button id="view_attendance_btn">📜 Xem điểm danh</button>
-
-    <!-- Kết quả điểm danh -->
-    <div id="attendance_result"></div>
-
-    <button style="margin-top: 2rem;" onclick="logout()">🚪 Đăng xuất</button>
   </div>
+
+  <!-- ✅ Modal hiển thị danh sách sinh viên -->
+  <div id="studentModal" class="modal" style="display: none;">
+    <div class="modal-content" style="position: relative; max-width: 900px; min-width: 700px;">
+      <span class="close" onclick="closeStudentModal()" style="position: absolute; top: 10px; right: 10px; font-size: 24px; cursor: pointer;">&times;</span>
+      <h3>👨‍🎓 Danh sách sinh viên</h3>
+  
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 10px 0;">
+        <!-- Tìm sinh viên -->
+        <input
+          type="text"
+          placeholder="🔍 Tìm sinh viên..."
+          id="studentSearchInput"
+          class="add-student-input"
+          style="flex: 1; max-width: 300px;"
+        />
+      
+        <!-- Thêm sinh viên -->
+        <div style="display: flex; gap: 5px;">
+          <input
+            type="text"
+            id="addStudentInput"
+            placeholder="Nhập mã SV"
+            class="add-student-input"
+          />
+          <button
+            class="add-student-btn"
+            onclick="addStudentToClass()"
+          >
+            + Thêm SV
+          </button>
+        </div>
+      </div>
+  
+      <div id="studentModalBody">⏳ Đang tải...</div>
+    </div>
+  </div>
+
+
+  <!-- ✅ Modal xác nhận xoá sinh viên khỏi lớp -->
+  <div id="confirmDeleteModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px;">
+      <span class="close" onclick="closeConfirmDelete()">&times;</span>
+      <h3>🗑 Xác nhận xoá sinh viên</h3>
+      <p id="confirmDeleteText">Bạn có chắc chắn muốn xoá sinh viên khỏi lớp này không?</p>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1rem;">
+        <button id="confirmDeleteBtn" class="btn btn-red">Xoá</button>
+        <button class="btn btn-secondary" onclick="closeConfirmDelete()">Huỷ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Modal hiển thị danh sách phiên -->
+  <div id="sessionModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" onclick="closeSessionModal()">&times;</span>
+      <h3>📋 Danh sách phiên điểm danh</h3>
+      <div id="sessionModalBody">⏳ Đang tải...</div>
+    </div>
+  </div>
+
+  <!-- Modal xác nhận xoá lớp học phần -->
+  <div id="modal-confirm-delete-class" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px;">
+      <h3>🗑 Xác nhận xoá lớp học phần</h3>
+      <p>Bạn có chắc chắn muốn xoá lớp học phần này không?</p>
+      <div class="modal-footer">
+        <button onclick="closeConfirmDeleteModal()" style="margin-right: 10px;">Huỷ</button>
+        <button id="confirmDeleteClassBtn" class="btn-red">Xoá</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal sửa lớp học phần -->
+  <div class="modal" id="modal-edit-class" style="display: none;">
+    <div class="modal-content" style="position: relative;">
+      <span class="close" onclick="closeEditModal()" style="position: absolute; top: 10px; right: 10px; font-size: 24px; cursor: pointer;">&times;</span>
+      <h2>Sửa lớp học phần</h2>
+      <form id="edit-class-form">
+        <div class="form-group">
+          <label for="edit-class-name">Tên lớp học phần:</label>
+          <div class="key-input-container">
+            <input type="text" id="edit-class-name" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="edit-class-key">Mã đăng ký:</label>
+          <div class="key-input-container">
+            <input type="password" id="edit-class-key" required />
+            <button type="button"
+                    class="class-key-toggle"
+                    onmousedown="togglePassword('edit-class-key', true)"
+                    onmouseup="togglePassword('edit-class-key', false)"
+                    onmouseleave="togglePassword('edit-class-key', false)">👁</button>
+          </div>
+        </div>
+        <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+          <div style="display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+            <button type="button" class="btn btn-red" onclick="openConfirmDeleteModal()">Xoá lớp học phần</button>
+          </div>
+          <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Huỷ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+
+  <!-- ✅ Modal tạo phiên điểm danh -->
+  <div id="createSessionModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+      <span class="close" onclick="closeCreateSessionModal()">&times;</span>
+      <h3>➕ Tạo phiên điểm danh</h3>
+      <div>
+        <div style="margin-bottom: 15px;">
+          <label style="margin-bottom: 10px;">Thời gian bắt đầu:</label>
+          <input type="datetime-local" id="sessionStartInput" required style="width: 100%;" />
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="margin-bottom: 10px;">Thời gian kết thúc:</label>
+          <input type="datetime-local" id="sessionEndInput" required style="width: 100%;" />
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button id="confirmCreateSessionBtn" class="btn-blue">Tạo</button>
+          <button class="btn btn-secondary" onclick="closeCreateSessionModal()" style="margin-right: 10px;">Huỷ</button>
+        </div>
+        <p id="createSessionMsg" style="margin-top: 10px;"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Modal xác nhận đăng xuất -->
+  <div id="modal-logout" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; position: relative;">
+      <span class="close" onclick="closeModalLogout()" style="position: absolute; top: 10px; right: 10px; font-size: 24px; cursor: pointer;">&times;</span>
+      <h3>🚪 Đăng xuất</h3>
+      <p>Bạn có chắc chắn muốn đăng xuất?</p>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1rem;">
+        <button class="btn btn-secondary" onclick="closeModalLogout()">Huỷ</button>
+        <button id="modal-logout-confirm" class="btn btn-red">Đăng xuất</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showSection(section) {
+      const sections = ['dashboard', 'create', 'view'];
+      sections.forEach(id => {
+        document.getElementById(`section-${id}`).style.display = 'none';
+      });
+
+      const target = document.getElementById(`section-${section}`);
+      if (target) target.style.display = 'block';
+
+      document.querySelectorAll('.teacher-sidebar a').forEach(a => a.classList.remove('active'));
+      const link = document.querySelector(`.teacher-sidebar a[data-section="${section}"]`);
+      if (link) link.classList.add('active');
+    }
+  </script>
 </body>
 </html>
