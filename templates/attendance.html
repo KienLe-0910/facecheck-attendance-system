@@ -3,44 +3,64 @@
 <head>
   <meta charset="UTF-8" />
   <title>Điểm danh khuôn mặt</title>
+  <link rel="icon" href="static\img\neu-logo.png" type="image/x-icon">
   <link rel="stylesheet" href="/static/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-  <script src="/static/script.js" defer></script>
+  <script src="/static/js/utils.js" defer></script>
+  <script src="/static/js/attendance.js" defer></script>
 </head>
 <body>
-  <div class="container">
-    <h2>📸 Điểm danh bằng khuôn mặt</h2>
+  <div class="attendance-container">
+    <div class="attendance-card">
+      <h2>📸 Điểm danh bằng khuôn mặt</h2>
 
-    <!-- Chọn phiên -->
-    <form id="attendanceForm">
-      <label for="session_id">Chọn phiên điểm danh:</label><br />
-      <select id="session_id" required></select><br />
-    </form>
+      <!-- Chọn phiên -->
+      <div class="session-select">
+        <label for="session_id">Chọn phiên điểm danh:</label>
+        <select id="session_id" required></select>
+      </div>
 
-    <!-- Camera -->
-    <div class="video-wrapper" style="margin-top: 1rem;">
-      <video id="camera" autoplay muted playsinline></video>
-      <canvas id="overlay"></canvas>
+      <!-- Camera -->
+      <div class="camera-wrapper">
+        <video id="camera" autoplay muted playsinline></video>
+        <canvas id="overlay"></canvas>
+      </div>
+
+      <!-- Bước hướng dẫn -->
+      <p id="faceStepMsg"></p>
+
+      <!-- Nút thao tác -->
+      <div class="attendance-btn-group">
+        <button id="startCaptureBtn" class="btn">🖊️ Bắt đầu quét</button>
+        <button id="resetCaptureBtn" class="btn btn-secondary">🔁 Chụp lại</button>
+      </div>
+
+      <!-- Ảnh xem trước -->
+      <h4 style="text-align: center;">🖼️ Ảnh đã chụp:</h4>
+      <div class="preview-face-container">
+        <div class="preview-face-item">
+          <img id="preview_front" class="preview-face-img" />
+        </div>
+        <div class="preview-face-item">
+          <img id="preview_left" class="preview-face-img" />
+        </div>
+        <div class="preview-face-item">
+          <img id="preview_right" class="preview-face-img" />
+        </div>
+      </div>
+
+      <!-- Nút xác nhận -->
+      <div style="text-align: center; margin-top: 1rem;">
+        <button id="submitRegisterBtn" class="btn w-full">✅ Xác nhận & điểm danh</button>
+      </div>
+
+      <!-- Thông báo -->
+      <p id="msg" class="status-msg"></p>
+
+      <!-- Quay lại -->
+      <a href="/student.html" class="back-link">⬅️ Quay lại</a>
     </div>
-    <p id="faceStepMsg" style="margin-top: 0.5rem;"></p>
-
-    <!-- Nút quét & reset -->
-    <button onclick="startMotionFaceCapture('camera', 'overlay')">🚀 Bắt đầu quét</button>
-    <button id="resetCaptureBtn">🔁 Chụp lại từ đầu</button>
-
-    <!-- Ảnh preview -->
-    <div style="margin-top: 1.5rem;">
-      <h4>🖼️ Ảnh đã chụp:</h4>
-      <img id="preview_front" style="width: 150px; margin-right: 1rem;" />
-      <img id="preview_right" style="width: 150px; margin-right: 1rem;" />
-      <img id="preview_left" style="width: 150px;" />
-    </div>
-
-    <!-- Nút xác nhận -->
-    <button onclick="submitMotionAttendance()" style="margin-top: 2rem;">✅ Xác nhận điểm danh</button>
-
-    <p id="msg" style="margin-top: 1rem;"></p>
-    <button style="margin-top: 1rem;" onclick="window.location.href='/student.html'">⬅️ Quay lại</button>
   </div>
 </body>
 </html>
