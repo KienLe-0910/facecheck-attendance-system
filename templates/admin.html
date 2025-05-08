@@ -3,54 +3,59 @@
 <head>
   <meta charset="UTF-8" />
   <title>Trang quản trị</title>
+  <link rel="icon" href="static\img\neu-logo.png" type="image/x-icon">
   <link rel="stylesheet" href="/static/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet"/>
-  <script src="/static/script.js" defer></script>
+  <script src="/static/js/utils.js" defer></script>
+  <script src="/static/js/admin.js" defer></script>
 </head>
 <body>
+  <div class="admin-wrapper">
   <div class="admin-layout">
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="admin-sidebar">
       <h2>🔧 Quản trị</h2>
       <ul>
         <li><a href="#" class="active" data-section="create" onclick="showSection('create')">➕ Tạo tài khoản</a></li>
         <li><a href="#" data-section="list" onclick="showSection('list')">📋 Danh sách giảng viên</a></li>
-        <li><a href="#" class="logout-button" onclick="logout()">🚪 Đăng xuất</a></li>
+        <li><a href="#" class="logout-button mt-4" onclick="showModalLogout()">🚪 Đăng xuất</a></li>
       </ul>
     </div>
 
     <!-- Main content -->
-    <div class="main-content">
+    <div class="admin-main">
       <h1>👨‍💼 Xin chào, <span id="admin-name">Admin</span></h1>
 
       <!-- Tạo tài khoản -->
       <section id="section-create">
         <form id="create-teacher-form">
-          <label for="user_id">Mã giảng viên:</label><br />
-          <input type="text" id="user_id" required /><br />
+          <label for="user_id">Mã giảng viên:</label>
+          <input type="text" id="user_id" required />
 
-          <label for="name">Họ tên:</label><br />
-          <input type="text" id="name" required /><br />
+          <label for="name">Họ tên:</label>
+          <input type="text" id="name" required />
 
-          <label for="phone_number">Số điện thoại:</label><br />
-          <input type="phone_number" id="phone_number" required /><br />
+          <label for="phone_number">Số điện thoại:</label>
+          <input type="text" id="phone_number" required />
 
-          <label for="email">Email:</label><br />
-          <input type="email" id="email" required /><br />
+          <label for="email">Email:</label>
+          <input type="email" id="email" required />
 
-          <label for="password">Mật khẩu:</label><br />
-          <input type="password" id="password" required /><br />
+          <label for="password">Mật khẩu:</label>
+          <input type="password" id="password" required />
 
-          <button type="submit">Tạo tài khoản</button>
+          <div style="margin-top: 1rem;">
+            <button type="submit" class="btn">Tạo tài khoản</button>
+          </div>
         </form>
-        <p id="message" style="margin-top: 10px; font-weight: bold;"></p>
+        <p id="admin-message"></p>
       </section>
 
       <!-- Danh sách giảng viên -->
       <section id="section-list" style="display: none;">
         <button id="load-teachers">🔄 Tải danh sách</button>
-        <div id="teachers-list" style="margin-top: 20px;">
-          <table class="teacher-table">
+        <div id="teachers-list">
+          <table class="admin-table">
             <thead>
               <tr>
                 <th>Mã GV</th>
@@ -70,23 +75,29 @@
     </div>
   </div>
 
+  <!-- ✅ Modal xác nhận đăng xuất -->
+  <div id="modal-logout" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; position: relative;">
+      <span class="close" onclick="closeModalLogout()" style="position: absolute; top: 10px; right: 10px; font-size: 24px; cursor: pointer;">&times;</span>
+      <h3>🚪 Đăng xuất</h3>
+      <p>Bạn có chắc chắn muốn đăng xuất?</p>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1rem;">
+        <button class="btn btn-secondary" onclick="closeModalLogout()">Huỷ</button>
+        <button id="modal-logout-confirm" class="btn btn-red">Đăng xuất</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Script chuyển section và xử lý active -->
   <script>
     function showSection(section) {
-      // 1. Ẩn tất cả sections
       document.getElementById('section-create').style.display = 'none';
       document.getElementById('section-list').style.display = 'none';
 
-      // 2. Hiện section được chọn
-      if (section === 'create') {
-        document.getElementById('section-create').style.display = 'block';
-      } else if (section === 'list') {
-        document.getElementById('section-list').style.display = 'block';
-      }
+      document.getElementById(`section-${section}`).style.display = 'block';
 
-      // 3. Đổi màu active menu
-      document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
-      const targetLink = document.querySelector(`.sidebar a[data-section="${section}"]`);
+      document.querySelectorAll('.admin-sidebar a').forEach(a => a.classList.remove('active'));
+      const targetLink = document.querySelector(`.admin-sidebar a[data-section="${section}"]`);
       if (targetLink) targetLink.classList.add('active');
     }
   </script>
