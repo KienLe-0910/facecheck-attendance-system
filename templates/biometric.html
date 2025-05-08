@@ -1,43 +1,62 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Quét khuôn mặt</title>
+  <link rel="icon" href="static\img\neu-logo.png" type="image/x-icon">
   <link rel="stylesheet" href="/static/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-  <script defer src="/static/script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script src="/static/js/utils.js" defer></script>
+  <script src="/static/js/biometric.js" defer></script>
 </head>
 <body>
-  <div class="login-container">
-    <!-- Cột giữa: chỉ dùng card trắng -->
+  <div class="biometric-container">
     <div class="biometric-card">
-      <h2>📸 Xác thực khuôn mặt 3 góc</h2>
+      <h2>📸 Quét khuôn mặt</h2>
 
-      <!-- Camera & overlay -->
+      <!-- Camera -->
       <div class="camera-wrapper">
         <video id="camera" autoplay muted playsinline></video>
         <canvas id="overlay"></canvas>
       </div>
 
-      <p id="faceStepMsg" style="margin-top: 1rem;"></p>
-      <button onclick="startMotionFaceCapture('camera', 'overlay')">🚀 Bắt đầu quét khuôn mặt</button>
+      <!-- Thông báo bước quét -->
+      <p id="faceStepMsg"></p>
 
-      <!-- Ảnh preview -->
-      <div style="margin-top: 1.5rem;">
-        <h4>🖼️ Ảnh đã chụp:</h4>
-        <img id="preview_front" class="preview-img" />
-        <img id="preview_right" class="preview-img" />
-        <img id="preview_left" class="preview-img" />
+      <!-- Nút thao tác -->
+      <div class="flex gap-2" style="justify-content: center; margin: 1rem 0;">
+        <button id="startCaptureBtn" class="btn">🖊️ Bắt đầu quét</button>
+        <button id="resetCaptureBtn" class="btn btn-secondary">🔁 Chụp lại</button>
       </div>
 
-      <button id="resetCaptureBtn" style="margin-top: 1rem;">🔁 Chụp lại</button>
+      <!-- Ảnh xem trước -->
+      <h4>🖼️ Ảnh đã chụp:</h4>
+      <div class="preview-face-container">
+        <div class="preview-face-item">
+          <img id="preview_front" class="preview-face-img" />
+          <p>Chính diện</p>
+        </div>
+        <div class="preview-face-item">
+          <img id="preview_left" class="preview-face-img" />
+          <p>Trái</p>
+        </div>
+        <div class="preview-face-item">
+          <img id="preview_right" class="preview-face-img" />
+          <p>Phải</p>
+        </div>
+      </div>
 
-      <!-- Xác nhận -->
-      <button onclick="submitMotionRegister()" style="margin-top: 2rem;">✅ Xác nhận & đăng ký</button>
-      <p id="msg" style="margin-top: 1rem;"></p>
+      <!-- Nút xác nhận -->
+      <div style="text-align: center; margin: 1rem 0;">
+        <button id="submitRegisterBtn" class="btn w-full">✅ Xác nhận & đăng ký</button>
+      </div>
 
-      <button style="margin-top: 1rem;" onclick="window.location.href='/register.html'">⬅️ Quay lại sửa thông tin</button>
+      <!-- Thông báo -->
+      <p id="msg" class="text-center mt-2"></p>
+
+      <!-- Quay lại -->
+      <a href="/register.html" class="link-button">⬅️ Quay lại nhập thông tin</a>
     </div>
   </div>
 </body>
