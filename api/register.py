@@ -9,6 +9,7 @@ import os
 import cv2
 from datetime import datetime
 import pytz
+from api.faiss_engine import init_index, add_embedding, save_index
 
 router = APIRouter()
 
@@ -30,6 +31,7 @@ class MotionRegisterRequest(BaseModel):
     name: str
     password: str
     phone_number: str
+    email: str
     role: str = "student"
     image_front: str
     image_left: str
@@ -43,6 +45,8 @@ def register_motion(request: MotionRegisterRequest):
     try:
         hashed_password = bcrypt.hashpw(request.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         now = get_current_vietnam_time()
+
+        init_index()  # ✅ Load hoặc tạo FAISS index
 
         def save_and_embed(image_data: str, folder: str, suffix: str):
             img_bytes = base64.b64decode(image_data.split(",")[1])
@@ -64,27 +68,34 @@ def register_motion(request: MotionRegisterRequest):
 
             vec = np.array(embedding[0]['embedding'], dtype=np.float32)
             vec_str = base64.b64encode(vec.tobytes()).decode("utf-8")
-            return vec_str, filepath
+            return vec_str, vec, filepath
 
         # Lưu và tính embedding từng ảnh
-        embed_front, path_front = save_and_embed(request.image_front, FRONT_DIR, "front")
-        embed_left, path_left = save_and_embed(request.image_left, LEFT_DIR, "left")
-        embed_right, path_right = save_and_embed(request.image_right, RIGHT_DIR, "right")
+        embed_front, vec_front, path_front = save_and_embed(request.image_front, FRONT_DIR, "front")
+        embed_left, vec_left, path_left = save_and_embed(request.image_left, LEFT_DIR, "left")
+        embed_right, vec_right, path_right = save_and_embed(request.image_right, RIGHT_DIR, "right")
+
+        # ✅ Gọi đúng - KHÔNG nối thủ công __angle
+        add_embedding(request.user_id, vec_front, "front")
+        add_embedding(request.user_id, vec_left, "left")
+        add_embedding(request.user_id, vec_right, "right")
+        save_index()
 
         # Ghi vào DB
         cursor.execute("""
             INSERT INTO users (
-                user_id, name, password, role, phone_number,
+                user_id, name, password, role, phone_number, email,
                 embedding_front, embedding_left, embedding_right,
                 face_image_path_front, face_image_path_left, face_image_path_right,
                 created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             request.user_id,
             request.name,
             hashed_password,
             request.role,
             request.phone_number,
+            request.email,
             embed_front,
             embed_left,
             embed_right,
@@ -95,7 +106,7 @@ def register_motion(request: MotionRegisterRequest):
             now
         ))
         conn.commit()
-        return {"success": True, "message": "✅ Đăng ký thành công bằng 3 ảnh!"}
+        return {"success": True, "message": "✅ Đăng ký thành công"}
 
     except Exception as e:
         print("🛑 Lỗi đăng ký motion:", e)
