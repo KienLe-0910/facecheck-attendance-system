@@ -2,12 +2,16 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from api.faiss_engine import init_index
 
 # Import các router
-from api import register, login, attendance, teacher, student, admin, info
+from api import register, login, attendance, teacher, student, admin
 
 # Tạo FastAPI app
 app = FastAPI(title="Hệ thống điểm danh bằng khuôn mặt")
+
+# ✅ Khởi tạo FAISS index khi hệ thống chạy
+init_index()
 
 # Mount static và templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -22,7 +26,6 @@ app.include_router(attendance.router)
 app.include_router(teacher.router)
 app.include_router(student.router)
 app.include_router(admin.router)
-app.include_router(info.router)
 
 
 # @app.get("/face-test")
@@ -55,17 +58,9 @@ async def teacher_dashboard(request: Request):
 async def attendance_page(request: Request):
     return templates.TemplateResponse("attendance.html", {"request": request})
 
-@app.get("/enrollment.html", response_class=HTMLResponse)
-async def enroll_page(request: Request):
-    return templates.TemplateResponse("enrollment.html", {"request": request})
-
 @app.get("/admin.html", response_class=HTMLResponse)
 async def admin_page(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
-
-@app.get("/info.html", response_class=HTMLResponse)
-async def info_page(request: Request):
-    return templates.TemplateResponse("info.html", {"request": request})
 
 @app.get("/biometric.html", response_class=HTMLResponse)
 def biometric_page(request: Request):
