@@ -3,30 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <title>Đăng ký tài khoản</title>
+  <link rel="icon" href="static\img\neu-logo.png" type="image/x-icon">
   <link rel="stylesheet" href="/static/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
-  <script src="/static/script.js" defer></script>
+  <script src="/static/js/utils.js" defer></script>
+  <script src="/static/js/register.js" defer></script>
 </head>
 <body>
-  <div class="container">
-    <!-- Cột phải: form đăng ký -->
-    <div class="login-right">
-      <div class="card">
-        <h2>📝 Đăng ký</h2>
+  <div class="register-container">
+    <div class="register-card">
+      <h2>📝 Đăng ký tài khoản</h2>
 
-        <form id="registerForm">
-          <input type="text" id="user_id" placeholder="Mã người dùng" required />
-          <input type="text" id="name" placeholder="Họ và tên" required />
+      <form id="registerForm">
+        <input type="text" id="user_id" placeholder="Mã người dùng" required />
+        <input type="text" id="name" placeholder="Họ và tên" required />
+
+        <div class="register-password-wrapper">
           <input type="password" id="password" placeholder="Mật khẩu" required />
-          <input type="text" id="phone_number" placeholder="Số điện thoại" required />
-          <input type="email" id="email" placeholder="Email" required />
-          <button type="submit">➡️ Tiếp tục quét khuôn mặt</button>
-        </form>
+          <button type="button"
+                  class="register-password-toggle"
+                  onmousedown="togglePassword('password', true)"
+                  onmouseup="togglePassword('password', false)"
+                  onmouseleave="togglePassword('password', false)">
+            👁
+          </button>
+        </div>
 
-        <p id="registerMsg" style="margin-top: 1rem;"></p>
-        <a href="/login.html" class="link-button" style="margin-top: 1rem;">⬅️ Quay lại đăng nhập</a>
-      </div>
+        <input type="text" id="phone_number" placeholder="Số điện thoại" required />
+        <input type="email" id="email" placeholder="Email" required />
+        <button type="submit" id="nextToBiometricBtn">➡️ Tiếp tục quét khuôn mặt</button>
+      </form>
+
+      <p id="registerMsg"></p>
+      <a href="/login.html" class="link-button">⬅️ Quay lại đăng nhập</a>
     </div>
   </div>
+
+  <script>
+    function togglePassword(id, show) {
+      const input = document.getElementById(id);
+      if (input) input.type = show ? 'text' : 'password';
+    }
+  </script>
 </body>
 </html>
