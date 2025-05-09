@@ -1,5 +1,5 @@
 // =============================
-// ✅ Logic cho student.html (tối ưu + có modal hủy lớp)
+// ✅ Logic cho student.html
 // =============================
 
 const user = getCurrentUser();
@@ -87,8 +87,8 @@ async function loadRegisteredClasses() {
           <td>${cls.class_id}</td>
           <td>${cls.class_name}</td>
           <td>
-            <button class="btn btn-red btn-sm" onclick="showUnenrollModal('${cls.class_id}')">🗑️ Hủy</button>
-            <button class="btn btn-blue btn-sm" onclick="openAttendanceModal('${cls.class_id}')">📋 Xem lịch sử</button>
+            <button class="btn btn-red btn-sm" onclick="showUnenrollModal('${cls.class_id}')">Hủy</button>
+            <button class="btn btn-blue btn-sm" onclick="openAttendanceModal('${cls.class_id}')">Xem lịch sử</button>
           </td>
         </tr>
       `;
