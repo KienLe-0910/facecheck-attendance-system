@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Trang quản trị</title>
-  <link rel="icon" href="static\img\neu-logo.png" type="image/x-icon">
+  <link rel="icon" href="static/img/neu-logo.png" type="image/x-icon">
   <link rel="stylesheet" href="/static/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet"/>
   <script src="/static/js/utils.js" defer></script>
@@ -11,73 +11,80 @@
 </head>
 <body>
   <div class="admin-wrapper">
-  <div class="admin-layout">
-    <!-- Sidebar -->
-    <div class="admin-sidebar">
-      <h2>🔧 Quản trị</h2>
-      <ul>
-        <li><a href="#" class="active" data-section="create" onclick="showSection('create')">Tạo tài khoản</a></li>
-        <li><a href="#" data-section="list" onclick="showSection('list')">Danh sách giảng viên</a></li>
-        <li><a href="#" class="logout-button mt-4" onclick="showModalLogout()">Đăng xuất</a></li>
-      </ul>
-    </div>
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div class="admin-sidebar">
+        <h2>🔧 Quản trị</h2>
+        <ul>
+          <li><a href="#" class="active" data-section="create" onclick="showSection('create')">Tạo tài khoản</a></li>
+          <li><a href="#" data-section="list" onclick="showSection('list')">Danh sách giảng viên</a></li>
+          <li><a href="#" data-section="info" onclick="showSection('info')">Tài khoản</a></li>
+          <li><a href="#" class="logout-button mt-4" onclick="showModalLogout()">Đăng xuất</a></li>
+        </ul>
+      </div>
 
-    <!-- Main content -->
-    <div class="admin-main">
-      <h1>Xin chào, <span id="admin-name">Admin</span></h1>
+      <!-- Main content -->
+      <div class="admin-main">
+        <h1>Xin chào, <span id="admin-name">Admin</span></h1>
 
-      <!-- Tạo tài khoản -->
-      <section id="section-create">
-        <form id="create-teacher-form">
-          <label for="user_id">Mã người dùng:</label>
-          <input type="text" id="user_id" required />
+        <!-- Tạo tài khoản -->
+        <section id="section-create">
+          <form id="create-teacher-form">
+            <label for="user_id">Mã người dùng:</label>
+            <input type="text" id="user_id" required />
 
-          <label for="name">Họ tên:</label>
-          <input type="text" id="name" required />
+            <label for="name">Họ tên:</label>
+            <input type="text" id="name" required />
 
-          <label for="phone_number">Số điện thoại:</label>
-          <input type="text" id="phone_number" required />
+            <label for="phone_number">Số điện thoại:</label>
+            <input type="text" id="phone_number" required />
 
-          <label for="email">Email:</label>
-          <input type="email" id="email" required />
+            <label for="email">Email:</label>
+            <input type="email" id="email" required />
 
-          <label for="password">Mật khẩu:</label>
-          <input type="password" id="password" required />
+            <label for="password">Mật khẩu:</label>
+            <input type="password" id="password" required />
 
-          <label for="role">Quyền tài khoản:</label>
-          <select id="role" required style="max-width: 400px;">
-            <option value="teacher">Giảng viên</option>
-            <option value="admin">Quản trị</option>
-          </select>
+            <label for="role">Quyền tài khoản:</label>
+            <select id="role" required style="max-width: 400px;">
+              <option value="teacher">Giảng viên</option>
+              <option value="admin">Quản trị</option>
+            </select>
 
-          <div style="margin-top: 1rem;">
-            <button type="submit" class="btn">Tạo tài khoản</button>
+            <div style="margin-top: 1rem;">
+              <button type="submit" class="btn">Tạo tài khoản</button>
+            </div>
+          </form>
+          <p id="admin-message"></p>
+        </section>
+
+        <!-- Danh sách giảng viên -->
+        <section id="section-list" style="display: none;">
+          <button id="load-teachers">🔄 Tải danh sách</button>
+          <div id="teachers-list">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Mã GV</th>
+                  <th>Họ tên</th>
+                  <th>SĐT</th>
+                  <th>Email</th>
+                  <th>Ngày tạo</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+              <tbody id="teacher-table-body">
+                <!-- JS sẽ chèn dữ liệu vào đây -->
+              </tbody>
+            </table>
           </div>
-        </form>
-        <p id="admin-message"></p>
-      </section>
+        </section>
 
-      <!-- Danh sách giảng viên -->
-      <section id="section-list" style="display: none;">
-        <button id="load-teachers">🔄 Tải danh sách</button>
-        <div id="teachers-list">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Mã GV</th>
-                <th>Họ tên</th>
-                <th>SĐT</th>
-                <th>Email</th>
-                <th>Ngày tạo</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody id="teacher-table-body">
-              <!-- JS sẽ chèn dữ liệu vào đây -->
-            </tbody>
-          </table>
-        </div>
-      </section>
+        <!-- Thông tin tài khoản -->
+        <section id="section-info" style="display: none;">
+          <div id="account-info"></div>
+        </section>
+      </div>
     </div>
   </div>
 
@@ -99,12 +106,15 @@
     function showSection(section) {
       document.getElementById('section-create').style.display = 'none';
       document.getElementById('section-list').style.display = 'none';
+      document.getElementById('section-info').style.display = 'none';
 
       document.getElementById(`section-${section}`).style.display = 'block';
 
       document.querySelectorAll('.admin-sidebar a').forEach(a => a.classList.remove('active'));
       const targetLink = document.querySelector(`.admin-sidebar a[data-section="${section}"]`);
       if (targetLink) targetLink.classList.add('active');
+
+      if (section === 'info') loadAdminInfo();
     }
   </script>
 </body>
