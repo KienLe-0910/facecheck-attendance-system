@@ -29,7 +29,7 @@
       <!-- Tạo tài khoản -->
       <section id="section-create">
         <form id="create-teacher-form">
-          <label for="user_id">Mã giảng viên:</label>
+          <label for="user_id">Mã người dùng:</label>
           <input type="text" id="user_id" required />
 
           <label for="name">Họ tên:</label>
@@ -43,6 +43,12 @@
 
           <label for="password">Mật khẩu:</label>
           <input type="password" id="password" required />
+
+          <label for="role">Quyền tài khoản:</label>
+          <select id="role" required style="max-width: 400px;">
+            <option value="teacher">Giảng viên</option>
+            <option value="admin">Quản trị</option>
+          </select>
 
           <div style="margin-top: 1rem;">
             <button type="submit" class="btn">Tạo tài khoản</button>
