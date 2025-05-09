@@ -12,22 +12,26 @@ def get_current_vietnam_time():
     return datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
 # --------- Schema để tạo giảng viên ---------
-class CreateTeacherRequest(BaseModel):
+class CreateUserRequest(BaseModel):
     user_id: str
     name: str
     phone_number: str
     email: str
     password: str
+    role: str  # 'admin' hoặc 'teacher'
 
-# --------- API tạo tài khoản giảng viên ---------
-@router.post("/create_teacher")
-def create_teacher(user_data: CreateTeacherRequest):
+# --------- API tạo tài khoản user ---------
+@router.post("/create_user")
+def create_user(user_data: CreateUserRequest):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_data.user_id,))
         if cursor.fetchone():
-            raise HTTPException(status_code=400, detail="❌ Mã giảng viên đã tồn tại.")
+            raise HTTPException(status_code=400, detail="❌ Mã người dùng đã tồn tại.")
+
+        if user_data.role not in ["teacher", "admin"]:
+            raise HTTPException(status_code=400, detail="❌ Role không hợp lệ. Chỉ cho phép 'teacher' hoặc 'admin'.")
 
         hashed_pw = bcrypt.hashpw(user_data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
         now = get_current_vietnam_time()
@@ -35,11 +39,11 @@ def create_teacher(user_data: CreateTeacherRequest):
         cursor.execute("""
             INSERT INTO users (user_id, name, phone_number, email, password, role, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (user_data.user_id, user_data.name, user_data.phone_number, user_data.email, hashed_pw, "teacher", now))
+        """, (user_data.user_id, user_data.name, user_data.phone_number, user_data.email, hashed_pw, user_data.role, now))
         conn.commit()
 
-        return {"success": True, "message": "✅ Đã tạo tài khoản giảng viên!"}
-    
+        return {"success": True, "message": f"✅ Đã tạo tài khoản {user_data.role} thành công!"}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi khi tạo tài khoản: {e}")
     finally:
