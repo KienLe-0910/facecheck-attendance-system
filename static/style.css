@@ -352,7 +352,7 @@ h1, h2 {
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .info-table th,
@@ -362,17 +362,16 @@ h1, h2 {
 }
 
 .info-table th {
-  background-color: #e2efff;
+  background-color: #f0f0f0; /* giống teacher */
+  color: #333;
   text-align: left;
-  font-weight: 600;
-  width: 180px;
-  white-space: nowrap;
-  color: #1f2937;
+  padding: 10px;
+  width: 200px;
 }
 
 .info-table td {
-  color: #111827;
   background-color: white;
+  padding: 10px;
 }
 
 .info-edit input {
