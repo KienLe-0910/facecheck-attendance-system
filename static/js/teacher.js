@@ -46,22 +46,22 @@ window.loadClasses = async function () {
       <div class="class-card">
         <div class="class-header">
           <div>
-            <h3>📘 ${cls.class_name}</h3>
+            <h2>${cls.class_name}</h2>
             <div class="class-meta" style="margin-top: 5px; display: flex; flex-direction: column; gap: 8px;">
               <div style="display: flex; align-items: center; gap: 5px;">
-                <span style="font-size: 16px;">🏷️</span>
+                <span style="font-size: 16px;"></span>
                 <strong style="font-weight: 600;">Mã lớp:</strong> 
                 <span>c1</span>
               </div>
               <div style="display: flex; align-items: center; gap: 5px;">
-                <span style="font-size: 16px;">🕒</span>
+                <span style="font-size: 16px;"></span>
                 <strong style="font-weight: 600;">Ngày tạo:</strong> 
                 <span>22:52 21/4/25</span>
               </div>
               <div style="display: flex; flex-direction: column; gap: 5px;">
                 <label style="display: flex; align-items: center; font-weight: 600;">
                   <div style="display: flex; align-items: center; gap: 5px;">
-                    <span style="font-size: 16px;">🔑</span>
+                    <span style="font-size: 16px;"></span>
                     <strong style="font-weight: 600;">Mã đăng ký:</strong>
                   </div>
                 </label>
@@ -79,10 +79,10 @@ window.loadClasses = async function () {
         </div>
 
         <div class="class-actions">
-          <button onclick="showCreateSessionModal('${cls.class_id}')">➕ Tạo phiên</button>
-          <button onclick="viewSessionsModal('${cls.class_id}')">📜 Xem phiên</button>
-          <button onclick="viewStudentsModal('${cls.class_id}')">👨‍🎓 Xem SV</button>
-          <button onclick="openEditClassModal('${cls.class_id}', '${cls.class_name}', '${cls.class_key}')">⚙️ Chỉnh sửa lớp học phần</button>
+          <button onclick="showCreateSessionModal('${cls.class_id}')">Tạo phiên</button>
+          <button onclick="viewSessionsModal('${cls.class_id}')">Xem phiên</button>
+          <button onclick="viewStudentsModal('${cls.class_id}')">Xem SV</button>
+          <button onclick="openEditClassModal('${cls.class_id}', '${cls.class_name}', '${cls.class_key}')">Chỉnh sửa lớp học phần</button>
         </div>
       </div>
     `).join("");
@@ -213,7 +213,7 @@ window.loadClasses = async function () {
       const tableId = `student-table-${class_id}`;
     
       body.innerHTML = `
-      <p style="margin: 10px 0;">👥 Tổng số sinh viên: ${students.length}</p>
+      <p style="margin: 10px 0;">Tổng số sinh viên: ${students.length}</p>
       <div style="overflow-x: auto;">
         <table id="${tableId}" class="student-table" style="min-width: 800px;">
           <thead><tr><th>STT</th><th>Mã SV</th><th>Họ tên</th><th>Email</th><th>SĐT</th><th>Xoá</th></tr></thead>
