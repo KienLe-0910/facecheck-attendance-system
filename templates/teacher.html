@@ -17,6 +17,7 @@
         <ul>
           <li><a href="#" class="active" data-section="dashboard" onclick="showSection('dashboard')">Danh sách lớp học</a></li>
           <li><a href="#" data-section="create" onclick="showSection('create')">Tạo lớp học</a></li>
+          <li><a href="#" data-section="info" onclick="showSection('info')">Tài khoản</a></li>
           <li><a href="#" class="teacher-logout" onclick="showModalLogout()">Đăng xuất</a></li>
         </ul>
       </div>
@@ -42,6 +43,11 @@
             <button type="submit">Tạo lớp học</button>
             <p id="createMsg" style="margin-top: 1rem;"></p>
           </form>
+        </section>
+
+        <!-- Thông tin tài khoản -->
+        <section id="section-info" style="display: none;">
+          <div id="account-info"></div>
         </section>
 
         <!-- Xem điểm danh -->
@@ -229,18 +235,21 @@
 
   <script>
     function showSection(section) {
-      const sections = ['dashboard', 'create', 'view'];
+      const sections = ['dashboard', 'create', 'view', 'info'];
       sections.forEach(id => {
-        document.getElementById(`section-${id}`).style.display = 'none';
+        const el = document.getElementById(`section-${id}`);
+        if (el) el.style.display = 'none';
       });
-
+    
       const target = document.getElementById(`section-${section}`);
       if (target) target.style.display = 'block';
-
+    
       document.querySelectorAll('.teacher-sidebar a').forEach(a => a.classList.remove('active'));
       const link = document.querySelector(`.teacher-sidebar a[data-section="${section}"]`);
       if (link) link.classList.add('active');
-    }
+    
+      if (section === 'info') loadTeacherInfo(); // 🔥 thêm dòng này
+    }    
   </script>
 </body>
 </html>
