@@ -79,6 +79,7 @@ def mark_attendance(
 
         start_time = vn_tz.localize(datetime.datetime.strptime(session["start_time"], "%Y-%m-%d %H:%M:%S"))
         end_time = vn_tz.localize(datetime.datetime.strptime(session["end_time"], "%Y-%m-%d %H:%M:%S"))
+        ontime_limit = session["ontime_limit"] if "ontime_limit" in session.keys() else 10
 
         if not (start_time <= now <= end_time):
             return {"success": False, "message": "⚠ Ngoài thời gian điểm danh!"}
@@ -90,7 +91,7 @@ def mark_attendance(
         if cursor.fetchone():
             return {"success": False, "message": "⚠ Bạn đã điểm danh rồi!"}
 
-        status = "on-time" if now <= start_time + datetime.timedelta(minutes=10) else "late"
+        status = "on-time" if now <= start_time + datetime.timedelta(minutes=ontime_limit) else "late"
 
         cursor.execute("""
             INSERT INTO attendance (user_id, session_id, status, created_at)
@@ -107,6 +108,7 @@ def mark_attendance(
         return {"success": False, "message": f"Lỗi hệ thống: {e}"}
     finally:
         conn.close()
+
 
 @router.get("/get_available_sessions")
 def get_available_sessions(user_id: str):
