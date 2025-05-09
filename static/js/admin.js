@@ -28,15 +28,18 @@ if (window.location.pathname.endsWith("admin.html")) {
           return;
         }
   
-        const res = await postJSON("/admin/create_teacher", {
+        const role = document.getElementById("role").value;
+
+        const res = await postJSON("/admin/create_user", {
           user_id,
           name,
           phone_number,
           email,
-          password
+          password,
+          role
         });
   
-        showMessage("message", res.message || res.detail, res.success !== false);
+        showMessage("admin-message", res.message || res.detail, res.success !== false);
         if (res.success) {
           teacherForm.reset();
           if (loadBtn) loadBtn.click(); // reload danh sách
