@@ -67,7 +67,7 @@ if (window.location.pathname.endsWith("admin.html")) {
             <td>${teacher.email || ""}</td>
             <td>${new Date(teacher.created_at).toLocaleDateString("vi-VN")}</td>
             <td>
-              <button onclick="viewClassesOfTeacher('${teacher.user_id}')">📦 Xem lớp</button>
+              <button onclick="viewClassesOfTeacher('${teacher.user_id}')">Xem lớp</button>
               <div id="classes-${teacher.user_id}" style="margin-top: 5px;"></div>
             </td>
           `;
