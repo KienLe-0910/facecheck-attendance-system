@@ -8,7 +8,6 @@ html, body {
   background: linear-gradient(to bottom right, #e3f2fd, #f8fafc);
   color: #111827;
   height: 100%;
-  overflow-y: auto;
 }
 
 /* ========================
@@ -672,8 +671,9 @@ h1, h2 {
 .admin-wrapper {
   background: linear-gradient(to bottom right, #e3f2fd, #f8fafc);
   min-height: 100vh;
+  height: 100vh;
   padding: 20px;
-  display: flex;
+  display: flex;  
   justify-content: center;
   align-items: center;
   box-sizing: border-box;
@@ -687,9 +687,8 @@ h1, h2 {
   border-radius: 0.5rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  min-height: 850px;
+  min-height: 650px;
 }
-
 
 .admin-sidebar {
   width: 250px;
@@ -735,6 +734,7 @@ h1, h2 {
   padding: 2rem;
   background: white;
   min-height: 600px;
+  overflow-y: auto;
 }
 
 /* Table và Form (nếu cần dùng lại) */
