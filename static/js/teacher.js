@@ -124,6 +124,7 @@ window.loadClasses = async function () {
       const start = document.getElementById("sessionStartInput").value;
       const end = document.getElementById("sessionEndInput").value;
       const msg = document.getElementById("createSessionMsg");
+      const ontimeLimit = parseInt(document.getElementById("ontimeLimitInput").value || "10");
 
       if (!start || !end) {
         msg.textContent = "⚠️ Vui lòng chọn đủ thời gian!";
@@ -136,7 +137,8 @@ window.loadClasses = async function () {
         body: JSON.stringify({
           class_id: currentClassForSession,
           start_time: start,
-          end_time: end
+          end_time: end,
+          ontime_limit: ontimeLimit
         })
       });
 
@@ -173,13 +175,14 @@ window.loadClasses = async function () {
     const sessions = result.data;
     body.innerHTML = `
       <table>
-        <thead><tr><th>STT</th><th>Bắt đầu</th><th>Kết thúc</th><th>Ngày tạo</th></tr></thead>
+        <thead><tr><th>STT</th><th>Bắt đầu</th><th>Kết thúc</th><th>Ngày tạo</th><th>On-time</th></tr></thead>
         <tbody>
           ${sessions.map((s, i) => `
             <tr>
               <td>${i + 1}</td>
               <td>${s.start_time}</td>
               <td>${s.end_time}</td>
+              <td>${s.ontime_limit || 10} phút</td>
               <td>${s.created_at}</td>
             </tr>
           `).join("")}
