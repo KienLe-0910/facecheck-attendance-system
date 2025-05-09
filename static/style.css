@@ -101,7 +101,7 @@ html, body {
   width: 100%;
   max-width: 2000px;
   background: white;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   min-height: 650px;
@@ -684,7 +684,7 @@ h1, h2 {
   width: 100%;
   max-width: 2000px;
   background: white;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   min-height: 850px;
@@ -821,7 +821,7 @@ h1, h2 {
   width: 100%;
   max-width: 2000px;
   background: white;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   min-height: 650px;
