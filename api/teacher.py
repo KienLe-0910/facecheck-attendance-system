@@ -15,6 +15,7 @@ class SessionCreate(BaseModel):
     class_id: str
     start_time: str  # dạng 'YYYY-MM-DDTHH:MM'
     end_time: str
+    ontime_limit: int = 10
 
 # 📌 API: Tạo lớp học phần mới
 @router.post("/create_class")
@@ -149,13 +150,14 @@ def create_session(data: SessionCreate):
         created_at = datetime.now(vn_tz).strftime("%Y-%m-%d %H:%M:%S")
 
         cursor.execute("""
-            INSERT INTO sessions (class_id, start_time, end_time, created_at)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO sessions (class_id, start_time, end_time, created_at, ontime_limit)
+            VALUES (?, ?, ?, ?, ?)
         """, (
             data.class_id,
             start_dt.strftime("%Y-%m-%d %H:%M:%S"),
             end_dt.strftime("%Y-%m-%d %H:%M:%S"),
-            created_at
+            created_at,
+            data.ontime_limit
         ))
         conn.commit()
         return {"success": True, "message": "✅ Phiên điểm danh đã được tạo!"}
@@ -172,7 +174,7 @@ def get_sessions(class_id: str):
 
     try:
         cursor.execute("""
-            SELECT id, start_time, end_time, created_at
+            SELECT id, start_time, end_time, created_at, ontime_limit
             FROM sessions
             WHERE class_id = ?
             ORDER BY created_at ASC
@@ -186,10 +188,11 @@ def get_sessions(class_id: str):
         data = []
         for row in records:
             data.append({
-                "session_id": row[0],  # Gán id vào session_id ở đây!
+                "session_id": row[0],
                 "start_time": row[1],
                 "end_time": row[2],
-                "created_at": row[3]
+                "created_at": row[3],
+                "ontime_limit": row[4]
             })
 
         return {"success": True, "data": data}
